@@ -201,54 +201,59 @@ $invoiceUrl = $trackingMode
         .order-chip .chip-dot { width: 7px; height: 7px; border-radius: 50%; }
         .order-chip .chip-status { color: #c49b63; font-weight: 700; opacity: 0.95; }
 
-        /* ── Status Message — centered over the 3D characters ── */
+        /* ── Status Message — compact strip under order track (keeps 3D characters visible) ── */
         #status-msg {
             position: fixed;
-            top: 42%;
+            top: 128px;
             left: 50%;
-            transform: translate(-50%, -50%);
-            z-index: 125;
+            transform: translateX(-50%);
+            z-index: 118;
             pointer-events: none;
             text-align: center;
             opacity: 0;
-            transition: opacity 0.45s ease, transform 0.45s ease;
-            max-width: min(90vw, 440px);
-            padding: 16px 26px 14px;
-            border-radius: 18px;
-            background: rgba(6, 4, 2, 0.58);
+            transition: opacity 0.4s ease, transform 0.35s ease;
+            max-width: min(360px, 88vw);
+            padding: 5px 14px 6px;
+            border-radius: 999px;
+            background: rgba(6, 4, 2, 0.72);
             border: 1px solid rgba(232, 168, 124, 0.28);
-            backdrop-filter: blur(12px);
-            box-shadow: 0 16px 48px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.05);
         }
         #status-msg.visible {
             opacity: 1;
-            transform: translate(-50%, -50%) scale(1);
+            transform: translateX(-50%) translateY(0);
         }
         #status-msg:not(.visible) {
-            transform: translate(-50%, -48%) scale(0.98);
+            transform: translateX(-50%) translateY(-6px);
         }
         .status-text {
-            font-size: 1.65rem;
+            font-size: 0.72rem;
             font-weight: 800;
             color: #fff;
-            letter-spacing: 0.04em;
+            letter-spacing: 0.06em;
             text-transform: uppercase;
-            text-shadow: 0 2px 16px rgba(0, 0, 0, 0.75), 0 0 28px rgba(0, 0, 0, 0.4);
-            line-height: 1.15;
+            text-shadow: 0 1px 6px rgba(0, 0, 0, 0.6);
+            line-height: 1.2;
+            display: block;
         }
         .status-sub {
-            font-size: 0.82rem;
-            color: rgba(255, 255, 255, 0.72);
-            margin-top: 8px;
+            font-size: 0.62rem;
+            color: rgba(255, 255, 255, 0.65);
+            margin-top: 2px;
             font-weight: 500;
-            line-height: 1.35;
+            line-height: 1.25;
+            display: block;
+            max-width: 42ch;
+            margin-left: auto;
+            margin-right: auto;
         }
-        /* Accent by phase (set from JS) */
-        #status-msg.status-msg--placed { border-color: rgba(122, 179, 255, 0.45); box-shadow: 0 16px 48px rgba(0,0,0,0.45), 0 0 24px rgba(122,179,255,0.12); }
-        #status-msg.status-msg--preparing { border-color: rgba(255, 180, 50, 0.5); box-shadow: 0 16px 48px rgba(0,0,0,0.45), 0 0 28px rgba(255,180,50,0.15); }
-        #status-msg.status-msg--brewing { border-color: rgba(255, 119, 68, 0.5); box-shadow: 0 16px 48px rgba(0,0,0,0.45), 0 0 28px rgba(255,119,68,0.15); }
-        #status-msg.status-msg--ready { border-color: rgba(80, 220, 100, 0.55); box-shadow: 0 16px 48px rgba(0,0,0,0.45), 0 0 32px rgba(80,220,100,0.2); }
-        #status-msg.status-msg--delivered { border-color: rgba(120, 200, 255, 0.45); }
+        /* Accent by phase (set from JS) — subtle glow, small footprint */
+        #status-msg.status-msg--placed { border-color: rgba(122, 179, 255, 0.45); box-shadow: 0 6px 20px rgba(0,0,0,0.35), 0 0 14px rgba(122,179,255,0.1); }
+        #status-msg.status-msg--preparing { border-color: rgba(255, 180, 50, 0.45); box-shadow: 0 6px 20px rgba(0,0,0,0.35), 0 0 16px rgba(255,180,50,0.12); }
+        #status-msg.status-msg--brewing { border-color: rgba(255, 119, 68, 0.45); box-shadow: 0 6px 20px rgba(0,0,0,0.35), 0 0 16px rgba(255,119,68,0.12); }
+        #status-msg.status-msg--ready { border-color: rgba(80, 220, 100, 0.5); box-shadow: 0 6px 20px rgba(0,0,0,0.35), 0 0 18px rgba(80,220,100,0.14); }
+        #status-msg.status-msg--delivered { border-color: rgba(120, 200, 255, 0.4); }
 
         /* ── Character Info Popup ── */
         #char-info {
@@ -373,6 +378,130 @@ $invoiceUrl = $trackingMode
         }
         .pb-pay-btn:hover { opacity: 0.9; }
         .pb-pay-btn:disabled { opacity: 0.4; cursor: default; }
+
+        /* ── Rotating chef prompt — compact toast (bottom-left, stays off characters) ── */
+        #chef-prompt {
+            position: fixed;
+            left: 10px;
+            right: auto;
+            bottom: 142px;
+            transform: none;
+            z-index: 127;
+            display: none;
+            flex-direction: column;
+            width: min(220px, calc(100vw - 88px));
+            padding: 7px 9px 8px;
+            border-radius: 11px;
+            pointer-events: auto;
+            text-align: left;
+            background: linear-gradient(145deg, rgba(22, 16, 11, 0.94), rgba(10, 7, 5, 0.96));
+            border: 1px solid rgba(232, 168, 124, 0.3);
+            box-shadow:
+                0 0 0 1px rgba(255, 255, 255, 0.05) inset,
+                0 6px 22px rgba(0, 0, 0, 0.45),
+                0 0 18px rgba(196, 155, 99, 0.12);
+            backdrop-filter: blur(10px);
+            overflow: hidden;
+        }
+        #chef-prompt.chef-prompt--visible {
+            display: flex;
+        }
+        #chef-prompt.chef-prompt--pop {
+            animation: cpPop 0.45s cubic-bezier(0.34, 1.4, 0.64, 1);
+        }
+        @keyframes cpPop {
+            from { opacity: 0; transform: translateY(8px) scale(0.96); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        #chef-prompt::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(110deg, transparent 40%, rgba(255, 200, 120, 0.06) 50%, transparent 60%);
+            background-size: 200% 100%;
+            animation: cpShimmer 3.5s ease-in-out infinite;
+            pointer-events: none;
+        }
+        @keyframes cpShimmer {
+            0% { background-position: 100% 0; }
+            100% { background-position: -100% 0; }
+        }
+        .cp-head {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            position: relative;
+            z-index: 1;
+            margin-bottom: 5px;
+        }
+        .cp-icon {
+            width: 28px; height: 28px;
+            border-radius: 8px;
+            background: rgba(196, 155, 99, 0.2);
+            border: 1px solid rgba(196, 155, 99, 0.35);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 0.95rem;
+            flex-shrink: 0;
+        }
+        .cp-name { font-size: 0.72rem; font-weight: 800; color: #fff; letter-spacing: 0.02em; line-height: 1.15; }
+        .cp-role { font-size: 0.55rem; color: #c49b63; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; margin-top: 1px; }
+        .cp-line {
+            position: relative;
+            z-index: 1;
+            font-size: 0.68rem;
+            font-weight: 700;
+            color: #f0e6dc;
+            line-height: 1.25;
+            margin: 0 0 3px 0;
+        }
+        .cp-sub {
+            position: relative;
+            z-index: 1;
+            font-size: 0.58rem;
+            color: rgba(255, 255, 255, 0.58);
+            line-height: 1.3;
+            margin: 0 0 6px 0;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        .cp-actions {
+            position: relative;
+            z-index: 1;
+            display: flex;
+            gap: 5px;
+            flex-wrap: nowrap;
+            align-items: stretch;
+        }
+        .cp-cta {
+            flex: 1;
+            min-width: 0;
+            padding: 5px 8px;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            font-size: 0.62rem;
+            font-weight: 800;
+            color: #1a1208;
+            background: linear-gradient(135deg, #e8c99a, #c49b63);
+            box-shadow: 0 2px 12px rgba(196, 155, 99, 0.3);
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
+        }
+        .cp-cta:hover { transform: translateY(-1px); box-shadow: 0 4px 16px rgba(196, 155, 99, 0.4); }
+        .cp-skip {
+            flex-shrink: 0;
+            padding: 5px 7px;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            background: rgba(255, 255, 255, 0.06);
+            color: rgba(255, 255, 255, 0.75);
+            font-size: 0.58rem;
+            font-weight: 800;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .cp-skip:hover { background: rgba(255, 255, 255, 0.1); color: #fff; }
 
         /* ── Hint ── */
         #hint {
@@ -574,30 +703,199 @@ $invoiceUrl = $trackingMode
         }
         #panel-scrim.visible { display: block; }
 
+        /* ── Phone / narrow screens: vertical rhythm, no overlap ── */
         @media (max-width: 640px) {
-            #order-track { padding: 8px 14px; }
-            .track-step { width: 60px; }
-            .track-dot { width: 28px; height: 28px; font-size: 12px; }
-            .track-lbl { font-size: 8px; }
-            .track-line { min-width: 14px; }
-            .scene-title { font-size: 0.85rem; }
-            .ctrl-btn { font-size: 0.7rem; padding: 5px 10px; }
-            .status-text { font-size: 1rem; }
-            .order-chip { font-size: 0.68rem; padding: 5px 10px; }
-            .k3d-overlay { width: 100vw; max-width: 100vw; }
-            #cart-fab { bottom: 54px; right: 16px; width: 48px; height: 48px; font-size: 1.3rem; }
-            #payment-banner {
-                top: 52px;
-                right: 10px;
-                left: 10px;
-                max-width: none;
-                flex-wrap: wrap;
-                row-gap: 8px;
+            #top-bar {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 6px;
+                padding: 8px 10px 10px;
+                padding-top: max(8px, env(safe-area-inset-top));
+                background: linear-gradient(to bottom, rgba(10,6,4,0.94) 0%, rgba(10,6,4,0.82) 85%, transparent 100%);
             }
-            #payment-banner .pb-pay-btn { width: 100%; }
-            #status-msg { top: 38%; padding: 14px 18px 12px; max-width: calc(100vw - 24px); }
-            .status-text { font-size: 1.25rem; }
-            #order-items { bottom: 64px; }
+            #top-bar > div:first-child {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                min-width: 0;
+                width: 100%;
+            }
+            .back-btn {
+                padding: 6px 10px;
+                font-size: 0.72rem;
+                flex-shrink: 0;
+            }
+            .scene-title {
+                font-size: 0.74rem;
+                min-width: 0;
+                flex: 1;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+            }
+            #controls {
+                display: grid;
+                grid-template-columns: 1fr 1fr 1fr;
+                gap: 6px;
+                width: 100%;
+                align-items: stretch;
+            }
+            .ctrl-btn {
+                font-size: 0.58rem;
+                padding: 8px 4px;
+                justify-content: center;
+                text-align: center;
+                line-height: 1.15;
+                min-height: 36px;
+                white-space: normal;
+                word-break: break-word;
+            }
+
+            /* Progress stepper: below stacked header, scroll if needed */
+            #order-track {
+                top: 118px;
+                left: 8px;
+                right: 8px;
+                transform: none;
+                max-width: none;
+                width: auto;
+                z-index: 102;
+                padding: 6px 8px;
+                pointer-events: auto;
+                overflow-x: auto;
+                overflow-y: hidden;
+                -webkit-overflow-scrolling: touch;
+                scrollbar-width: thin;
+                justify-content: flex-start;
+                touch-action: pan-x;
+            }
+            .track-step { width: 52px; flex-shrink: 0; }
+            .track-dot { width: 26px; height: 26px; font-size: 11px; }
+            .track-lbl { font-size: 7px; margin-top: 3px; }
+            .track-line { min-width: 10px; flex-shrink: 0; }
+
+            /* Status pill sits under the track (track ~64px tall) */
+            #status-msg {
+                top: 188px;
+                left: 8px;
+                right: 8px;
+                transform: none;
+                max-width: none;
+                width: auto;
+                padding: 4px 10px 5px;
+            }
+            #status-msg.visible {
+                transform: none;
+            }
+            #status-msg:not(.visible) {
+                transform: translateY(-4px);
+            }
+            .status-text { font-size: 0.62rem; }
+            .status-sub { font-size: 0.52rem; margin-top: 2px; }
+
+            /* Order chips: clear of station strip + cart */
+            #order-items {
+                bottom: 96px;
+                max-width: 100vw;
+                padding: 0 8px;
+                gap: 6px;
+            }
+            .order-chip { font-size: 0.62rem; padding: 4px 9px; }
+
+            /* Station row: single horizontal scroll — no wrap, no overlap with cart */
+            #status-bar {
+                flex-wrap: nowrap;
+                justify-content: flex-start;
+                overflow-x: auto;
+                overflow-y: hidden;
+                -webkit-overflow-scrolling: touch;
+                scrollbar-width: thin;
+                gap: 6px;
+                padding: 8px 56px calc(10px + env(safe-area-inset-bottom)) 10px;
+                pointer-events: auto;
+                touch-action: pan-x;
+            }
+            .station-pill {
+                flex: 0 0 auto;
+                padding: 5px 9px;
+                gap: 5px;
+                border-radius: 8px;
+            }
+            .station-label { font-size: 0.6rem; }
+            .station-status-text { font-size: 0.5rem; }
+            .station-dot { width: 6px; height: 6px; }
+
+            /* Cart sits above dock, inside padding reserve on status-bar */
+            #cart-fab {
+                bottom: calc(58px + env(safe-area-inset-bottom));
+                right: 8px;
+                width: 46px;
+                height: 46px;
+                font-size: 1.2rem;
+                z-index: 161;
+            }
+
+            #chef-prompt {
+                left: 8px;
+                bottom: calc(150px + env(safe-area-inset-bottom));
+                width: min(200px, calc(100vw - 70px));
+                padding: 6px 8px 7px;
+            }
+            .cp-line { font-size: 0.64rem; }
+            .cp-sub { font-size: 0.55rem; -webkit-line-clamp: 2; }
+
+            .k3d-overlay { width: 100vw; max-width: 100vw; }
+
+            /* Payment: compact bottom-right — above order chips + station row; not over #order-items */
+            /* Order chips sit ~bottom:96px and grow upward (often 2+ rows); cart FAB ~104px tall from bottom */
+            #payment-banner {
+                top: auto;
+                left: auto;
+                right: 6px;
+                /* Clear chip band (96px + multi-row height) + gap; sits above chef toast on left */
+                bottom: calc(160px + env(safe-area-inset-bottom));
+                transform: none;
+                max-width: min(156px, calc(100vw - 96px));
+                width: min(156px, calc(100vw - 96px));
+                flex-wrap: wrap;
+                align-items: flex-start;
+                align-content: flex-start;
+                row-gap: 4px;
+                column-gap: 5px;
+                padding: 6px 8px 7px;
+                border-radius: 10px;
+                box-sizing: border-box;
+            }
+            #payment-banner .pb-icon { font-size: 0.95rem; line-height: 1; }
+            #payment-banner .pb-text { flex: 1 1 65%; min-width: 0; }
+            #payment-banner .pb-title { font-size: 0.64rem; line-height: 1.2; }
+            #payment-banner .pb-sub {
+                display: none;
+            }
+            #payment-banner .pb-amount { font-size: 0.78rem; }
+            #payment-banner .pb-pay-btn {
+                flex: 1 1 100%;
+                width: 100%;
+                min-height: 32px;
+                font-size: 0.65rem;
+                padding: 6px 8px;
+                border-radius: 7px;
+            }
+
+            #hint { display: none; }
+        }
+
+        /* Short screens: keep payment above cart/chips without hitting the header */
+        @media (max-width: 640px) and (max-height: 560px) {
+            #payment-banner {
+                bottom: calc(50px + env(safe-area-inset-bottom));
+            }
+        }
+
+        @media (max-width: 380px) {
+            #order-track { top: 122px; }
+            #status-msg { top: 194px; }
+            .ctrl-btn { font-size: 0.54rem; padding: 7px 2px; min-height: 34px; }
         }
     </style>
 </head>
@@ -636,7 +934,7 @@ $invoiceUrl = $trackingMode
         <div id="controls">
             <?php if ($trackingMode): ?>
                 <a href="<?php echo $invoiceUrl; ?>" class="ctrl-btn">📄 Invoice</a>
-                <button class="ctrl-btn" id="btn-order-more" style="background:rgba(196,155,99,0.2);border-color:#c49b63;">Order more</button>
+                <button type="button" class="ctrl-btn" id="btn-order-more" style="background:rgba(196,155,99,0.2);border-color:#c49b63;" title="Optional: hide the progress bar — you can already add items with the cart or chefs">Simple view</button>
             <?php else: ?>
                 <button class="ctrl-btn" id="btn-demo" title="Toggle demo animation cycle">Demo Mode</button>
             <?php endif; ?>
@@ -670,11 +968,28 @@ $invoiceUrl = $trackingMode
     <!-- Status Message -->
     <div id="status-msg">
         <div class="status-text" id="statusText">Preparing</div>
-        <div class="status-sub" id="statusSub">Kitchen is working on your items</div>
+        <div class="status-sub" id="statusSub">Items in progress</div>
     </div>
 
     <!-- Order Items -->
     <div id="order-items"></div>
+
+    <!-- Rotating chef “buy from me” (tracking mode; JS fills & shows) -->
+    <div id="chef-prompt" aria-live="polite">
+        <div class="cp-head">
+            <div class="cp-icon" id="cp-icon">☕</div>
+            <div>
+                <div class="cp-name" id="cp-name">Chef</div>
+                <div class="cp-role" id="cp-role">Station</div>
+            </div>
+        </div>
+        <p class="cp-line" id="cp-line">Order from my station</p>
+        <p class="cp-sub" id="cp-sub">Tap to open menu.</p>
+        <div class="cp-actions">
+            <button type="button" class="cp-cta" id="cp-cta">Order ✨</button>
+            <button type="button" class="cp-skip" id="cp-skip" title="Show next chef">Next →</button>
+        </div>
+    </div>
 
     <!-- Character Info Popup -->
     <div id="char-info">
@@ -687,8 +1002,8 @@ $invoiceUrl = $trackingMode
     <!-- Station Status Bar (dynamically filled by JS) -->
     <div id="status-bar"></div>
 
-    <!-- Cart FAB -->
-    <button id="cart-fab" style="display:none;">
+    <!-- Cart FAB (always available — add more while order is preparing) -->
+    <button type="button" id="cart-fab" style="display:flex;">
         🛒
         <span class="badge" id="cart-badge">0</span>
     </button>

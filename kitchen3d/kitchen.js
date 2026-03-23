@@ -102,6 +102,19 @@ const STATION_STYLES = {
 
 const FALLBACK_STYLE = { icon: '🍽️', label: 'Kitchen', counter: 0x6b5b3a, counterTop: 0x8a7a5a, charName: 'Chef', skin: 0xd4a574, shirt: 0xffffff, apron: 0xaaaaaa, pants: 0x2c2c2c, hat: 'chef', hatClr: 0xffffff, equipment: 'stove' };
 
+/** Fun one-liners for rotating “buy from me” prompts (tracking mode) */
+function getChefPitch(type) {
+    const t = (type || '').toLowerCase().trim();
+    const map = {
+        coffee:      { line: 'Fresh coffee?', sub: 'Tap to order.' },
+        drink:       { line: 'Something to drink?', sub: 'Juices & blends here.' },
+        dessert:     { line: 'Save room for dessert?', sub: 'Sweet treats ready.' },
+        starter:     { line: 'Start with a bite?', sub: 'Hot & crispy.' },
+        'main dish': { line: 'Hungry for mains?', sub: 'From the stove.' },
+    };
+    return map[t] || { line: 'Order more?', sub: 'Open menu below.' };
+}
+
 function getStyle(type) {
     return STATION_STYLES[type.toLowerCase().trim()] || FALLBACK_STYLE;
 }
@@ -116,9 +129,9 @@ const STATUS_LABELS = {
     ready: 'Ready', delivered: 'Delivered',
 };
 const STATUS_SUBS = {
-    placed: "Order received — we're on it", created: "Order received — we're on it",
-    preparing: 'Kitchen is working on your items', brewing: 'Finishing on the line',
-    ready: 'Pick up when you see green', delivered: 'Thank you — enjoy!',
+    placed: "We're on it", created: "We're on it",
+    preparing: 'Items in progress', brewing: 'On the line',
+    ready: 'Pick up at the counter', delivered: 'Enjoy!',
 };
 const STATUS_MSG_CLASS = {
     placed: 'placed', created: 'placed',
@@ -140,8 +153,10 @@ class CafeKitchen {
         this.mouse       = new THREE.Vector2(-10, -10);
         this.hovered     = null;
         this.selected    = null;
-        this.autoRotate  = true;
+        this.autoRotate  = false;
         this.readyCelebrated = false;
+        this._chefPromptTimer = null;
+        this._chefPromptIndex = 0;
 
         this.orderData = window.KITCHEN_ORDER || null;
         this.trackingMode = !!this.orderData;
@@ -183,6 +198,7 @@ class CafeKitchen {
             if (this._pendingPaymentStatus === 'unpaid') {
                 this.showPaymentBanner(this._pendingOrderTotal);
             }
+            setTimeout(() => this.startChefPromptRotation(), 2200);
         }
 
         this.animate();
@@ -232,7 +248,7 @@ class CafeKitchen {
         this.controls.minPolarAngle = 0.2;
         this.controls.minDistance = 4;
         this.controls.maxDistance = 16;
-        this.controls.autoRotate = true;
+        this.controls.autoRotate = this.autoRotate;
         this.controls.autoRotateSpeed = 0.25;
     }
 
@@ -723,8 +739,14 @@ class CafeKitchen {
                 if (stationRef) {
                     this.showProductPanel(stationRef);
                 } else if (charRef?.userData?.type === 'character') {
-                    this.selected = charRef;
-                    this.showCharInfo(charRef);
+                    const cat = charRef.userData.categoryType || charRef.userData.station;
+                    if (this.trackingMode) {
+                        this.hideCharInfo();
+                        this.showProductPanel(cat);
+                    } else {
+                        this.selected = charRef;
+                        this.showCharInfo(charRef);
+                    }
                 }
             } else {
                 this.selected = null;
@@ -786,11 +808,10 @@ class CafeKitchen {
         badge.className = 'info-badge ' + status;
 
         const menuBtn = document.getElementById('info-view-menu-btn');
-        if (menuBtn && !this.trackingMode) {
+        if (menuBtn) {
             menuBtn.style.display = 'inline-block';
+            menuBtn.textContent = 'Order from me ✨';
             menuBtn.dataset.category = charGroup.userData.categoryType || charGroup.userData.station;
-        } else if (menuBtn) {
-            menuBtn.style.display = 'none';
         }
 
         el.classList.add('visible');
@@ -833,19 +854,22 @@ class CafeKitchen {
        ═══════════════════════════════════════════════════════════ */
 
     initOrdering() {
+        document.getElementById('cart-fab').style.display = 'flex';
+
         if (this.trackingMode) {
-            document.getElementById('cart-fab').style.display = 'none';
             const orderMoreBtn = document.getElementById('btn-order-more');
             if (orderMoreBtn) {
-                orderMoreBtn.addEventListener('click', () => {
-                    this.exitTrackingMode();
-                });
+                orderMoreBtn.addEventListener('click', () => this.exitTrackingMode());
             }
-        } else {
-            document.getElementById('cart-fab').style.display = 'flex';
         }
 
         document.getElementById('cart-fab')?.addEventListener('click', () => this.showCart());
+
+        document.getElementById('cp-cta')?.addEventListener('click', () => {
+            const cat = document.getElementById('chef-prompt')?.dataset?.categoryType;
+            if (cat) this.showProductPanel(cat);
+        });
+        document.getElementById('cp-skip')?.addEventListener('click', () => this.showNextChefPrompt());
 
         document.getElementById('pp-close')?.addEventListener('click', () => this.hideProductPanel());
         document.getElementById('cd-close')?.addEventListener('click', () => this.hideCart());
@@ -899,6 +923,7 @@ class CafeKitchen {
             sm.classList.remove('visible', 'status-msg--placed', 'status-msg--preparing', 'status-msg--brewing', 'status-msg--ready', 'status-msg--delivered');
         }
         this.hidePaymentBanner();
+        this.stopChefPromptRotation();
         const orderItems = document.getElementById('order-items');
         if (orderItems) orderItems.innerHTML = '';
 
@@ -936,11 +961,14 @@ class CafeKitchen {
             }
         });
         const rotBtn = document.getElementById('btn-rotate');
-        rotBtn?.addEventListener('click', () => {
-            this.autoRotate = !this.autoRotate;
-            this.controls.autoRotate = this.autoRotate;
+        if (rotBtn) {
             rotBtn.classList.toggle('active', this.autoRotate);
-        });
+            rotBtn.addEventListener('click', () => {
+                this.autoRotate = !this.autoRotate;
+                this.controls.autoRotate = this.autoRotate;
+                rotBtn.classList.toggle('active', this.autoRotate);
+            });
+        }
     }
 
     /* ── Product Panel ── */
@@ -1021,6 +1049,9 @@ class CafeKitchen {
         if (!document.getElementById('cart-drawer').classList.contains('open')) {
             document.getElementById('panel-scrim').classList.remove('visible');
         }
+        if (this.trackingMode) {
+            setTimeout(() => this.renderChefPromptCard(), 350);
+        }
     }
 
     /* ── Cart AJAX ── */
@@ -1064,6 +1095,9 @@ class CafeKitchen {
         document.getElementById('cart-drawer').classList.remove('open');
         if (!document.getElementById('product-panel').classList.contains('open')) {
             document.getElementById('panel-scrim').classList.remove('visible');
+        }
+        if (this.trackingMode) {
+            setTimeout(() => this.renderChefPromptCard(), 350);
         }
     }
 
@@ -1143,6 +1177,9 @@ class CafeKitchen {
 
     hideCheckout() {
         document.getElementById('checkout-overlay').classList.remove('open');
+        if (this.trackingMode) {
+            setTimeout(() => this.renderChefPromptCard(), 350);
+        }
     }
 
     async submitCheckout() {
@@ -1298,7 +1335,7 @@ class CafeKitchen {
             : `${window.location.pathname}?order_id=${orderId}`;
         history.pushState({}, '', trackUrl);
 
-        document.getElementById('cart-fab').style.display = 'none';
+        document.getElementById('cart-fab').style.display = 'flex';
         document.getElementById('instruction-banner')?.classList.add('hidden');
         this.hideProductPanel();
         this.hideCart();
@@ -1322,11 +1359,14 @@ class CafeKitchen {
             `;
             document.getElementById('btn-order-more')?.addEventListener('click', () => this.exitTrackingMode());
             const rotBtn = document.getElementById('btn-rotate');
-            rotBtn?.addEventListener('click', () => {
-                this.autoRotate = !this.autoRotate;
-                this.controls.autoRotate = this.autoRotate;
+            if (rotBtn) {
                 rotBtn.classList.toggle('active', this.autoRotate);
-            });
+                rotBtn.addEventListener('click', () => {
+                    this.autoRotate = !this.autoRotate;
+                    this.controls.autoRotate = this.autoRotate;
+                    rotBtn.classList.toggle('active', this.autoRotate);
+                });
+            }
         }
 
         try {
@@ -1357,6 +1397,80 @@ class CafeKitchen {
         document.getElementById('order-track')?.classList.add('visible');
         clearInterval(this._pollTimer);
         this._pollTimer = setInterval(() => this.pollOrder(), 3000);
+
+        setTimeout(() => this.startChefPromptRotation(), 800);
+    }
+
+    /* ── Rotating “buy from me” chef prompts (tracking mode) ── */
+
+    showNextChefPrompt() {
+        if (!this.trackingMode || !this.characters.length) return;
+        this._chefPromptIndex++;
+        this.renderChefPromptCard();
+    }
+
+    renderChefPromptCard() {
+        const el = document.getElementById('chef-prompt');
+        if (!el || !this.trackingMode || !this.characters.length) return;
+
+        const panelOpen = document.getElementById('product-panel')?.classList.contains('open');
+        const cartOpen = document.getElementById('cart-drawer')?.classList.contains('open');
+        const checkoutOpen = document.getElementById('checkout-overlay')?.classList.contains('open');
+        if (panelOpen || cartOpen || checkoutOpen) {
+            el.classList.remove('chef-prompt--visible', 'chef-prompt--pop');
+            return;
+        }
+
+        const ch = this.characters[this._chefPromptIndex % this.characters.length];
+        const type = ch.userData.categoryType || ch.userData.station;
+        const style = getStyle(type);
+        const pitch = getChefPitch(type);
+
+        el.dataset.categoryType = type;
+        const iconEl = document.getElementById('cp-icon');
+        const nameEl = document.getElementById('cp-name');
+        const roleEl = document.getElementById('cp-role');
+        const lineEl = document.getElementById('cp-line');
+        const subEl = document.getElementById('cp-sub');
+        if (iconEl) iconEl.textContent = style.icon;
+        if (nameEl) nameEl.textContent = style.charName;
+        if (roleEl) roleEl.textContent = style.label;
+        if (lineEl) lineEl.textContent = pitch.line;
+        if (subEl) subEl.textContent = pitch.sub;
+
+        el.classList.add('chef-prompt--visible');
+        el.classList.remove('chef-prompt--pop');
+        void el.offsetWidth;
+        el.classList.add('chef-prompt--pop');
+
+        const tgt = ch.position.clone();
+        tgt.y += 1.2;
+        this.controls.target.lerp(tgt, 0.35);
+    }
+
+    startChefPromptRotation() {
+        this.stopChefPromptRotation();
+        if (!this.trackingMode || !this.characters.length) return;
+
+        this._chefPromptIndex = 0;
+        this.renderChefPromptCard();
+        this._chefPromptTimer = setInterval(() => {
+            if (!this.trackingMode) {
+                this.stopChefPromptRotation();
+                return;
+            }
+            this._chefPromptIndex++;
+            this.renderChefPromptCard();
+        }, 9000);
+    }
+
+    stopChefPromptRotation() {
+        if (this._chefPromptTimer) {
+            clearInterval(this._chefPromptTimer);
+            this._chefPromptTimer = null;
+        }
+        const el = document.getElementById('chef-prompt');
+        if (el) el.classList.remove('chef-prompt--visible', 'chef-prompt--pop');
     }
 
     /* ── Backend Status Polling ────────────────────────────── */
