@@ -15,6 +15,27 @@ if (isset($_POST['submit'])) {
     $email = $_POST['email'];
     $password = $_POST['password'];
 
+    // Allow login via .env credentials (and auto-create admin if missing)
+    if (!empty(ADMIN_LOGIN_EMAIL) && !empty(ADMIN_LOGIN_PASSWORD) && $email === ADMIN_LOGIN_EMAIL && $password === ADMIN_LOGIN_PASSWORD) {
+      $emailEsc = mysqli_real_escape_string($conn, $email);
+      $nameEsc = mysqli_real_escape_string($conn, ADMIN_LOGIN_NAME ?: 'Admin');
+      $passEsc = mysqli_real_escape_string($conn, $password); // plain text auth in this project
+
+      $res = mysqli_query($conn, "SELECT * FROM admins WHERE email='{$emailEsc}' LIMIT 1") or die("Query Unsuccessful !!");
+      if (mysqli_num_rows($res) === 0) {
+        mysqli_query($conn, "INSERT INTO admins (admin_name, email, password) VALUES ('{$nameEsc}','{$emailEsc}','{$passEsc}')") or die("Query Unsuccessful !!");
+        $res = mysqli_query($conn, "SELECT * FROM admins WHERE email='{$emailEsc}' LIMIT 1") or die("Query Unsuccessful !!");
+      }
+
+      if ($row = mysqli_fetch_assoc($res)) {
+        $_SESSION['admin_name'] = $row['admin_name'];
+        $_SESSION['email'] = $row['email'];
+        $_SESSION['admin_id'] = $row['id'];
+        header("Location: " . url . "/admin-panel");
+        exit();
+      }
+    }
+
     // sql query
     // verifying the user email
     $query = "SELECT * FROM admins WHERE email = '$email'";

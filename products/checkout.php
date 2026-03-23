@@ -2,17 +2,11 @@
 
 <?php
 
-// if user logged in trying to directly access checkout page
-// denied to access
-if (!isset($_SERVER['HTTP_REFERER'])) {
-  echo "<script>window.location.href = '../index.php'</script>";
-  exit();
-}
-
-// if user not logged in
-// denied to access cart page
-if (!isset($_SESSION['user_id'])) {
-  header("Location: " . url . "/index.php"); // Redirect to the home page
+// allow checkout for either logged-in user OR QR guest session
+$isUser = isset($_SESSION['user_id']);
+$isQr = isset($_SESSION['qr_session_token']);
+if (!$isUser && !$isQr) {
+  header("Location: " . url . "/index.php");
   exit();
 }
 
@@ -25,17 +19,51 @@ if (isset($_POST['submit'])) {
   $zip_code = $_POST['postcode-or-zip'];
   $phone = $_POST['phone'];
   $email = $_POST['email'];
-  $user_id = $_SESSION['user_id'];
-  $status = "pending";
-  $total_price = $_SESSION['total_price'];
+  $user_id = $_SESSION['user_id'] ?? null;
+  $session_token = $_SESSION['qr_session_token'] ?? null;
+  $table_number = $_SESSION['qr_table_number'] ?? null;
+
+  // create order first (unpaid) then redirect to payment page
+  $status = "created";
+  $total_price = $_SESSION['total_price'] ?? 0;
+
+  $user_id_sql = $user_id ? (int)$user_id : "NULL";
+  $session_token_sql = $session_token ? ("'" . mysqli_real_escape_string($conn, $session_token) . "'") : "NULL";
+  $table_number_sql = $table_number ? (int)$table_number : "NULL";
 
   // sql query
-  $query = "INSERT INTO orders (first_name, last_name, country, street_address, town, zip_code, phone, email, user_id, status, total_price) VALUES ('{$first_name}','{$last_name}','{$country}','{$street_address}','{$town_city}','{$zip_code}','{$phone}','{$email}','{$user_id}','{$status}','{$total_price}')";
+  $query = "INSERT INTO orders (first_name, last_name, country, street_address, town, zip_code, phone, email, user_id, session_token, table_number, status, payment_status, total_price)
+            VALUES ('{$first_name}','{$last_name}','{$country}','{$street_address}','{$town_city}','{$zip_code}','{$phone}','{$email}',{$user_id_sql},{$session_token_sql},{$table_number_sql},'{$status}','unpaid','{$total_price}')";
   mysqli_query($conn, $query) or die("Query Unsuccessful");
+  $order_id = mysqli_insert_id($conn);
 
-  echo "<script>
-          window.location.href = 'delete-cart.php';
-        </script>";
+  // move cart lines into order_items for invoice/kitchen
+  $where = $user_id
+    ? ("user_id = " . (int)$user_id)
+    : ("session_token = '" . mysqli_real_escape_string($conn, $session_token) . "'");
+  $cartRows = mysqli_query($conn, "SELECT * FROM cart WHERE {$where}") or die("Query Unsuccessful");
+  while ($c = mysqli_fetch_assoc($cartRows)) {
+    $p = (float)$c['price'];
+    $q = (int)$c['quantity'];
+    $line = $p * $q;
+    $nameEsc = mysqli_real_escape_string($conn, $c['name']);
+    $imgEsc = mysqli_real_escape_string($conn, $c['image']);
+    $descEsc = mysqli_real_escape_string($conn, $c['description']);
+    $sizeEsc = mysqli_real_escape_string($conn, $c['size']);
+    $pid = (int)$c['product_id'];
+
+    mysqli_query(
+      $conn,
+      "INSERT INTO order_items (order_id, product_id, name, image, price, size, quantity, line_total, item_status)
+       VALUES ({$order_id}, {$pid}, '{$nameEsc}', '{$imgEsc}', {$p}, '{$sizeEsc}', {$q}, {$line}, 'placed')"
+    ) or die("Query Unsuccessful");
+  }
+
+  // keep minimal user info for payment redirect
+  $_SESSION['pending_order_id'] = $order_id;
+
+  echo "<script>window.location.href = 'pay.php?order_id={$order_id}';</script>";
+  exit();
 }
 ?>
 

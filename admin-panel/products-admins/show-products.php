@@ -20,10 +20,12 @@ $query_result = mysqli_query($conn, $product_query) or die("Query Unsuccessful")
     <div class="col">
       <div class="card">
         <div class="card-body">
-          <h5 class="card-title mb-4 d-inline">Foods</h5>
-          <a href="create-products.php" class="btn btn-primary mb-4 text-center float-right">Add New Product</a>
+          <div class="d-flex justify-content-between align-items-center flex-wrap mb-3" style="gap:10px;">
+            <h5 class="card-title mb-0">Products</h5>
+            <a href="create-products.php" class="btn btn-primary">Add New Product</a>
+          </div>
           <div class="table-responsive">
-            <table class="table">
+            <table class="table table-striped table-hover">
               <thead>
                 <tr>
                   <th class="text-center">Id</th>
@@ -31,7 +33,7 @@ $query_result = mysqli_query($conn, $product_query) or die("Query Unsuccessful")
                   <th class="text-center">image</th>
                   <th class="text-center">price</th>
                   <th class="text-center">type</th>
-                  <th class="text-center">delete</th>
+                  <th class="text-center">actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -45,7 +47,10 @@ $query_result = mysqli_query($conn, $product_query) or die("Query Unsuccessful")
                       <td class="text-center"><img src="../../images/<?php echo $product['image']; ?>" height="60px" width="60px"></td>
                       <td class="text-center">$<?php echo $product['price']; ?></td>
                       <td class="text-center"><?php echo $product['type']; ?></td>
-                      <td class="text-center"><a href="delete-product.php?id=<?php echo $product['id']; ?>" class="btn btn-danger  text-center ">delete</a></td>
+                      <td class="text-center">
+                        <a href="edit-product.php?id=<?php echo (int)$product['id']; ?>" class="btn btn-sm btn-outline-primary">Edit</a>
+                        <a href="delete-product.php?id=<?php echo (int)$product['id']; ?>" onclick="return confirm('Delete this product?');" class="btn btn-sm btn-outline-danger">Delete</a>
+                      </td>
                     </tr>
                 <?php }
                 } ?>

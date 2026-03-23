@@ -1,5 +1,69 @@
 <?php require_once "includes/header.php"; ?>
 
+<?php
+// Quick add-to-cart from menu cards (works for logged-in user OR QR guest session)
+$isUser = isset($_SESSION['user_id']);
+$isQr = isset($_SESSION['qr_session_token']);
+
+if (isset($_POST['add_to_cart'])) {
+  if (!$isUser && !$isQr) {
+    echo "<script>alert('Scan table QR or login to start ordering'); window.location.href='" . url . "/index.php';</script>";
+    exit();
+  }
+
+  $product_id = isset($_POST['product_id']) ? (int)$_POST['product_id'] : 0;
+  $size = $_POST['size'] ?? 'Medium';
+  $quantity = isset($_POST['quantity']) ? (int)$_POST['quantity'] : 1;
+  if ($quantity < 1) $quantity = 1;
+  if ($quantity > 20) $quantity = 20;
+
+  $prodRes = mysqli_query($conn, "SELECT * FROM products WHERE id = {$product_id} LIMIT 1") or die("Query Unsuccessful");
+  if (mysqli_num_rows($prodRes) === 0) {
+    echo "<script>alert('Product not found'); window.location.href='" . url . "/menu.php';</script>";
+    exit();
+  }
+  $p = mysqli_fetch_assoc($prodRes);
+
+  $name = mysqli_real_escape_string($conn, $p['name']);
+  $image = mysqli_real_escape_string($conn, $p['image']);
+  $description = mysqli_real_escape_string($conn, $p['description']);
+  $price = mysqli_real_escape_string($conn, $p['price']);
+  $sizeEsc = mysqli_real_escape_string($conn, $size);
+
+  $user_id = $isUser ? (int)$_SESSION['user_id'] : null;
+  $session_token = $isQr ? $_SESSION['qr_session_token'] : null;
+  $table_number = $isQr && isset($_SESSION['qr_table_number']) ? (int)$_SESSION['qr_table_number'] : null;
+
+  // If item already exists in cart for this user/session + same size, increment quantity
+  if ($isUser) {
+    $check = mysqli_query($conn, "SELECT id, quantity FROM cart WHERE user_id={$user_id} AND product_id={$product_id} AND size='{$sizeEsc}' LIMIT 1") or die("Query Unsuccessful");
+  } else {
+    $tokEsc = mysqli_real_escape_string($conn, $session_token);
+    $check = mysqli_query($conn, "SELECT id, quantity FROM cart WHERE session_token='{$tokEsc}' AND product_id={$product_id} AND size='{$sizeEsc}' LIMIT 1") or die("Query Unsuccessful");
+  }
+
+  if (mysqli_num_rows($check) > 0) {
+    $row = mysqli_fetch_assoc($check);
+    $newQty = (int)$row['quantity'] + $quantity;
+    if ($newQty > 50) $newQty = 50;
+    mysqli_query($conn, "UPDATE cart SET quantity={$newQty} WHERE id=" . (int)$row['id']) or die("Query Unsuccessful");
+  } else {
+    $user_id_sql = $user_id ? (int)$user_id : "NULL";
+    $session_token_sql = $session_token ? ("'" . mysqli_real_escape_string($conn, $session_token) . "'") : "NULL";
+    $table_number_sql = $table_number ? (int)$table_number : "NULL";
+
+    mysqli_query(
+      $conn,
+      "INSERT INTO cart (name, image, price, description, size, quantity, product_id, user_id, session_token, table_number)
+       VALUES ('{$name}','{$image}','{$price}','{$description}','{$sizeEsc}',{$quantity},{$product_id},{$user_id_sql},{$session_token_sql},{$table_number_sql})"
+    ) or die("Query Unsuccessful");
+  }
+
+  echo "<script>window.location.href='" . url . "/menu.php?added=1';</script>";
+  exit();
+}
+?>
+
 <section class="home-slider owl-carousel">
   <div class="slider-item" style="background-image: url(images/bg_3.jpg)" data-stellar-background-ratio="0.5">
     <div class="overlay"></div>
@@ -16,6 +80,25 @@
     </div>
   </div>
 </section>
+
+<?php if (isset($_SESSION['qr_session_token']) && isset($_SESSION['qr_table_number'])) { ?>
+  <div class="container mt-4">
+    <div class="p-3" style="background:#1a1a1a;border-radius:10px;color:#fff;">
+      <div class="d-md-flex justify-content-between align-items-center">
+        <div>
+          <strong>Table <?php echo (int)$_SESSION['qr_table_number']; ?></strong> ordering is active.
+          <span style="opacity:0.85;">Add items below and open cart anytime.</span>
+          <?php if (isset($_GET['added']) && $_GET['added'] === '1') { ?>
+            <span style="margin-left:10px;color:#8be28b;">Item added to cart.</span>
+          <?php } ?>
+        </div>
+        <div class="mt-2 mt-md-0">
+          <a class="btn btn-primary py-2 px-3" href="<?php echo url; ?>/products/cart.php">View Cart</a>
+        </div>
+      </div>
+    </div>
+  </div>
+<?php } ?>
 
 <section class="ftco-intro">
   <div class="container-wrap">
@@ -263,7 +346,17 @@
                             </p>
                             <p class="price"><span>$<?php echo $drink['price']; ?></span></p>
                             <p>
-                              <a href="products/product-single.php?id=<?php echo $drink['id']; ?>" class="btn btn-primary btn-outline-primary">Show</a>
+                              <?php if (isset($_SESSION['user_id']) || isset($_SESSION['qr_session_token'])) { ?>
+                                <form method="post" action="menu.php" style="display:inline-block;">
+                                  <input type="hidden" name="product_id" value="<?php echo (int)$drink['id']; ?>">
+                                  <input type="hidden" name="size" value="Medium">
+                                  <input type="hidden" name="quantity" value="1">
+                                  <button type="submit" name="add_to_cart" class="btn btn-primary">Add to Cart</button>
+                                </form>
+                                <a href="products/product-single.php?id=<?php echo $drink['id']; ?>" class="btn btn-white btn-outline-white">Customize</a>
+                              <?php } else { ?>
+                                <a href="qr.php?table=1" class="btn btn-primary">Scan QR to Order</a>
+                              <?php } ?>
                             </p>
                           </div>
                         </div>
@@ -293,7 +386,17 @@
                             </p>
                             <p class="price"><span>$<?php echo $drink['price']; ?></span></p>
                             <p>
-                              <a href="products/product-single.php?id=<?php echo $drink['id']; ?>" class="btn btn-primary btn-outline-primary">Show</a>
+                              <?php if (isset($_SESSION['user_id']) || isset($_SESSION['qr_session_token'])) { ?>
+                                <form method="post" action="menu.php" style="display:inline-block;">
+                                  <input type="hidden" name="product_id" value="<?php echo (int)$drink['id']; ?>">
+                                  <input type="hidden" name="size" value="Medium">
+                                  <input type="hidden" name="quantity" value="1">
+                                  <button type="submit" name="add_to_cart" class="btn btn-primary">Add to Cart</button>
+                                </form>
+                                <a href="products/product-single.php?id=<?php echo $drink['id']; ?>" class="btn btn-white btn-outline-white">Customize</a>
+                              <?php } else { ?>
+                                <a href="qr.php?table=1" class="btn btn-primary">Scan QR to Order</a>
+                              <?php } ?>
                             </p>
                           </div>
                         </div>
@@ -323,7 +426,17 @@
                             </p>
                             <p class="price"><span>$<?php echo $dessert['price']; ?></span></p>
                             <p>
-                              <a href="products/product-single.php?id=<?php echo $dessert['id']; ?>" class="btn btn-primary btn-outline-primary">Show</a>
+                              <?php if (isset($_SESSION['user_id']) || isset($_SESSION['qr_session_token'])) { ?>
+                                <form method="post" action="menu.php" style="display:inline-block;">
+                                  <input type="hidden" name="product_id" value="<?php echo (int)$dessert['id']; ?>">
+                                  <input type="hidden" name="size" value="Medium">
+                                  <input type="hidden" name="quantity" value="1">
+                                  <button type="submit" name="add_to_cart" class="btn btn-primary">Add to Cart</button>
+                                </form>
+                                <a href="products/product-single.php?id=<?php echo $dessert['id']; ?>" class="btn btn-white btn-outline-white">Customize</a>
+                              <?php } else { ?>
+                                <a href="qr.php?table=1" class="btn btn-primary">Scan QR to Order</a>
+                              <?php } ?>
                             </p>
                           </div>
                         </div>
@@ -353,7 +466,17 @@
                             </p>
                             <p class="price"><span>$<?php echo $dessert['price']; ?></span></p>
                             <p>
-                              <a href="products/product-single.php?id=<?php echo $dessert['id']; ?>" class="btn btn-primary btn-outline-primary">Show</a>
+                              <?php if (isset($_SESSION['user_id']) || isset($_SESSION['qr_session_token'])) { ?>
+                                <form method="post" action="menu.php" style="display:inline-block;">
+                                  <input type="hidden" name="product_id" value="<?php echo (int)$dessert['id']; ?>">
+                                  <input type="hidden" name="size" value="Medium">
+                                  <input type="hidden" name="quantity" value="1">
+                                  <button type="submit" name="add_to_cart" class="btn btn-primary">Add to Cart</button>
+                                </form>
+                                <a href="products/product-single.php?id=<?php echo $dessert['id']; ?>" class="btn btn-white btn-outline-white">Customize</a>
+                              <?php } else { ?>
+                                <a href="qr.php?table=1" class="btn btn-primary">Scan QR to Order</a>
+                              <?php } ?>
                             </p>
                           </div>
                         </div>

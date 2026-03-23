@@ -2,26 +2,26 @@
 
 <?php
 
-// if user logged in trying to directly access delete page
-// denied to access
-if (!isset($_SERVER['HTTP_REFERER'])) {
-    echo "<script>window.location.href = '../index.php'</script>";
-    exit();
-}
-
-// if user not logged in
-// denied to access delete page
-if (!isset($_SESSION['user_id'])) {
-    header("Location: " . url . "/index.php"); // Redirect to the home page
+// allow delete for either logged-in user OR QR guest session
+$isUser = isset($_SESSION['user_id']);
+$isQr = isset($_SESSION['qr_session_token']);
+if (!$isUser && !$isQr) {
+    header("Location: " . url . "/index.php");
     exit();
 }
 
 if (isset($_GET['id'])) {
 
     $product_id = $_GET['id'];
-    $user_id = $_SESSION['user_id'];
+    $product_id = (int)$product_id;
 
-    $query = "DELETE FROM cart WHERE product_id = {$product_id} AND user_id = {$user_id}";
+    if ($isUser) {
+        $user_id = (int)$_SESSION['user_id'];
+        $query = "DELETE FROM cart WHERE product_id = {$product_id} AND user_id = {$user_id}";
+    } else {
+        $tok = mysqli_real_escape_string($conn, $_SESSION['qr_session_token']);
+        $query = "DELETE FROM cart WHERE product_id = {$product_id} AND session_token = '{$tok}'";
+    }
     mysqli_query($conn, $query) or die("Query Unsuccessful");
 
     echo "<script>alert('item removed')</script>";

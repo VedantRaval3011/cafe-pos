@@ -1,10 +1,19 @@
-<?php require_once "../../config/config.php"; ?>
+<?php
+session_start();
+require_once "../../config/config.php";
+?>
 <?php
 
 // if admin logged in trying to directly access delete page
 // denied to access
 if (!isset($_SERVER['HTTP_REFERER'])) {
     echo "<script>window.location.href = '" . url . "/admin-panel'</script>";
+}
+
+$isAdmin = isset($_SESSION['admin_name']);
+if (!$isAdmin) {
+    header("Location: " . url . "/admin-panel/admins/login.php");
+    exit();
 }
 
 $product_id = $_GET["id"];

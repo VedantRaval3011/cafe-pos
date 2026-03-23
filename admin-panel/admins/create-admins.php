@@ -2,6 +2,13 @@
 
 <?php
 
+// if admin not logged in
+// denied to access this page
+if (!isset($_SESSION['admin_name'])) {
+  header("Location: " . url . "/admin-panel/admins/login.php");
+  exit();
+}
+
 // Code for admin registration 
 if (isset($_POST['submit'])) {
   if (empty($_POST['name']) or empty($_POST['email']) or empty($_POST['password'])) {

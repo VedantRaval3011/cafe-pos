@@ -28,17 +28,35 @@ if (isset($_GET['id'])) {
 		$price = $_POST['price'];
 		$quantity = $_POST['quantity'];
 		$size = $_POST['size'];
-		$user_id = $_SESSION['user_id'];
+		$user_id = $_SESSION['user_id'] ?? null;
+		$session_token = $_SESSION['qr_session_token'] ?? null;
+		$table_number = $_SESSION['qr_table_number'] ?? null;
 
-		$query = "INSERT INTO cart (name, image, price, description, size, quantity, product_id, user_id) VALUES ('{$name}', '{$image}', '{$price}', '{$description}', '{$size}', {$quantity}, {$id}, {$user_id})";
-		mysqli_query($conn, $query) or die("Query Unsuccessful");
+		if (!$user_id && !$session_token) {
+			echo "<script>alert('Scan table QR or login to add items');</script>";
+		} else {
+			$user_id_sql = $user_id ? (int)$user_id : "NULL";
+			$session_token_sql = $session_token ? ("'" . mysqli_real_escape_string($conn, $session_token) . "'") : "NULL";
+			$table_number_sql = $table_number ? (int)$table_number : "NULL";
 
-		echo "<script>alert('Added to cart successfully')</script>";
+			$query = "INSERT INTO cart (name, image, price, description, size, quantity, product_id, user_id, session_token, table_number)
+			          VALUES ('{$name}', '{$image}', '{$price}', '{$description}', '{$size}', {$quantity}, {$id}, {$user_id_sql}, {$session_token_sql}, {$table_number_sql})";
+			mysqli_query($conn, $query) or die("Query Unsuccessful");
+
+			echo "<script>alert('Added to cart successfully')</script>";
+		}
 	}
 
 	// validation for cart
+	$whereCart = null;
 	if (isset($_SESSION['user_id'])) {
-		$query = "SELECT * FROM cart WHERE product_id = {$id} AND user_id = {$_SESSION['user_id']}";
+		$whereCart = "user_id = " . (int)$_SESSION['user_id'];
+	} elseif (isset($_SESSION['qr_session_token'])) {
+		$tok = mysqli_real_escape_string($conn, $_SESSION['qr_session_token']);
+		$whereCart = "session_token = '{$tok}'";
+	}
+	if ($whereCart) {
+		$query = "SELECT * FROM cart WHERE product_id = {$id} AND {$whereCart}";
 		$rowCount = mysqli_query($conn, $query);
 	}
 ?>
@@ -105,7 +123,7 @@ if (isset($_GET['id'])) {
 						<input hidden type="text" name="price" value="<?php echo $product['price']; ?>">
 						<input hidden type="text" name="product-id" value="<?php echo $id; ?>">
 						<?php
-						if (isset($_SESSION['user_id'])) {
+						if (isset($_SESSION['user_id']) || isset($_SESSION['qr_session_token'])) {
 						?>
 							<?php
 							if (mysqli_num_rows($rowCount) > 0) {
@@ -120,8 +138,8 @@ if (isset($_GET['id'])) {
 							<?php } ?>
 						<?php } else {
 						?>
-							<a href="<?php echo url; ?>/auth/login.php" class="btn btn-primary py-3 px-4 cart" name="submit" type="submit">
-								Login to Add to cart
+							<a href="<?php echo url; ?>/qr.php?table=1" class="btn btn-primary py-3 px-4 cart">
+								Scan QR to start ordering
 							</a>
 						<?php } ?>
 					</form>

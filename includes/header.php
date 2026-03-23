@@ -72,6 +72,9 @@ require_once __DIR__ . '/../config/config.php'; // Include the configuration fil
           <li class="nav-item">
             <a href="<?php echo url; ?>/contact.php" class="nav-link">Contact</a>
           </li>
+          <li class="nav-item">
+            <a href="<?php echo url; ?>/kitchen3d/" class="nav-link" style="color:#e8a87c;">🔥 Live Kitchen</a>
+          </li>
           <?php if (isset($_SESSION['username'])) {
           ?>
             <!-- show logout button if user is logged in -->
@@ -90,6 +93,15 @@ require_once __DIR__ . '/../config/config.php'; // Include the configuration fil
                 </li>
                 <li><a class="dropdown-item" href="<?php echo url; ?>/auth/logout.php">Log Out</a></li>
               </ul>
+            </li>
+          <?php } elseif (isset($_SESSION['qr_session_token'])) { ?>
+            <li class="nav-item cart">
+              <a href="<?php echo url; ?>/products/cart.php" class="nav-link">
+                <span class="icon icon-shopping_cart"></span>
+                <?php if (isset($_SESSION['qr_table_number'])) { ?>
+                  <small style="margin-left:6px;opacity:0.85;">Table <?php echo (int)$_SESSION['qr_table_number']; ?></small>
+                <?php } ?>
+              </a>
             </li>
           <?php } else { ?>
             <li class="nav-item">

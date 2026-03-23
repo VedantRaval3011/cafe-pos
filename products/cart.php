@@ -2,19 +2,24 @@
 
 <?php
 
-// if user not logged in
-// denied to access cart page
-if (!isset($_SESSION['user_id'])) {
-  header("Location: " . url . "/index.php"); // Redirect to the home page
+// allow cart for either logged-in user OR QR guest session
+$isUserCart = isset($_SESSION['user_id']);
+$isQrCart = isset($_SESSION['qr_session_token']);
+if (!$isUserCart && !$isQrCart) {
+  header("Location: " . url . "/index.php");
+  exit();
 }
 
 //show products in cart
-$query = "SELECT * FROM cart WHERE user_id = {$_SESSION['user_id']}";
+$where = $isUserCart
+  ? ("user_id = " . (int)$_SESSION['user_id'])
+  : ("session_token = '" . mysqli_real_escape_string($conn, $_SESSION['qr_session_token']) . "'");
+$query = "SELECT * FROM cart WHERE {$where}";
 $result = mysqli_query($conn, $query) or die("Query Unsuccessful");
 
 
 //show total cart price
-$query2 = "SELECT SUM(price * quantity) as total FROM cart WHERE user_id = {$_SESSION['user_id']}";
+$query2 = "SELECT SUM(price * quantity) as total FROM cart WHERE {$where}";
 $result2 = mysqli_query($conn, $query2) or die("Query Unsuccessful");
 if (mysqli_num_rows($result2) > 0) {
   $total = mysqli_fetch_assoc($result2);

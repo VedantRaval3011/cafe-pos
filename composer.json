@@ -1,0 +1,16 @@
+{
+  "name": "ns-coffee/qr-ordering",
+  "description": "QR-based smart ordering + email invoice system",
+  "type": "project",
+  "require": {
+    "php": ">=8.0",
+    "dompdf/dompdf": "^2.0",
+    "phpmailer/phpmailer": "^6.9"
+  },
+  "config": {
+    "optimize-autoloader": true,
+    "preferred-install": "dist",
+    "sort-packages": true
+  }
+}
+
