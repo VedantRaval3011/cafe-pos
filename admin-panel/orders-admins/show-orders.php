@@ -65,7 +65,7 @@ $query_result = mysqli_query($conn, $order_query) or die("Query Unsuccessful");
                       <td class="text-center"><?php echo $orders["town"]; ?></td>
                       <td class="text-center"><?php echo $orders["zip_code"]; ?></td>
                       <td class="text-center"><?php echo $orders["phone"]; ?></td>
-                      <td class="text-center">$<?php echo $orders["total_price"]; ?></td>
+                      <td class="text-center">₹<?php echo number_format((float)$orders["total_price"], 2); ?></td>
                       <td class="text-center">
                         <?php
                           $s = $orders["status"];

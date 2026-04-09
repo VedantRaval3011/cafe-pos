@@ -4,13 +4,13 @@
    <img src="https://img.shields.io/github/forks/mrnikhilsingh/coffee-shop-management-system" alt="GitHub forks">  
 </p>
 
-# NS Coffee — Coffee Shop Management System
+# Cafe Junction — Coffee Shop Management System
 
 Web app for a café: menu, cart, checkout (Razorpay), QR table ordering, **3D live kitchen** (Three.js), admin panel, bookings, and optional PDF invoices by email.
 
 **Stack:** PHP (≥ 8.0), MySQL, Apache, HTML/CSS/JS. Optional: Composer (DomPDF + PHPMailer for invoices).
 
-![NS Coffee Preview](https://github.com/mrnikhilsingh/coffee-shop-management-system/blob/main/images/website-screenshots/hero-section.png)
+![Cafe Junction Preview](https://github.com/mrnikhilsingh/coffee-shop-management-system/blob/main/images/website-screenshots/hero-section.png)
 
 ---
 
@@ -150,7 +150,7 @@ With default XAMPP paths and `APP_URL=http://localhost/coffee`:
 
 ## Demo
 
-Live demo (if available): [Website Link](https://nscoffee.free.nf/).
+Live demo (if available): Website link.
 
 ---
 

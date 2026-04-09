@@ -31,7 +31,7 @@ $query_result = mysqli_query($conn, $product_query) or die("Query Unsuccessful")
                   <th class="text-center">Id</th>
                   <th class="text-center">name</th>
                   <th class="text-center">image</th>
-                  <th class="text-center">price</th>
+                  <th class="text-center">Price (₹)</th>
                   <th class="text-center">type</th>
                   <th class="text-center">actions</th>
                 </tr>
@@ -45,7 +45,7 @@ $query_result = mysqli_query($conn, $product_query) or die("Query Unsuccessful")
                       <td class="text-center"><?php echo $product['id']; ?></td>
                       <td class="text-center"><?php echo $product['name']; ?></td>
                       <td class="text-center"><img src="../../images/<?php echo $product['image']; ?>" height="60px" width="60px"></td>
-                      <td class="text-center">$<?php echo $product['price']; ?></td>
+                      <td class="text-center">₹<?php echo htmlspecialchars($product['price']); ?></td>
                       <td class="text-center"><?php echo $product['type']; ?></td>
                       <td class="text-center">
                         <a href="edit-product.php?id=<?php echo (int)$product['id']; ?>" class="btn btn-sm btn-outline-primary">Edit</a>

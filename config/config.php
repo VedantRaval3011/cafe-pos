@@ -50,13 +50,16 @@ if ($_SERVER['HTTP_HOST'] === 'localhost') {
 define("RAZORPAY_KEY_ID", $env['RAZORPAY_KEY_ID'] ?? '');
 define("RAZORPAY_KEY_SECRET", $env['RAZORPAY_KEY_SECRET'] ?? '');
 
+// Online table booking: holding fee charged via Razorpay (₹). Set 0 in .env to skip payment (not recommended for production).
+define("BOOKING_FEE_INR", max(0, (float)($env['BOOKING_FEE_INR'] ?? 200)));
+
 // Email (SMTP)
 define("SMTP_HOST", $env['SMTP_HOST'] ?? 'smtp.gmail.com');
 define("SMTP_PORT", (int)($env['SMTP_PORT'] ?? 587));
 define("SMTP_USERNAME", $env['SMTP_USERNAME'] ?? '');
 define("SMTP_PASSWORD", $env['SMTP_PASSWORD'] ?? '');
 define("SMTP_FROM_EMAIL", $env['SMTP_FROM_EMAIL'] ?? '');
-define("SMTP_FROM_NAME", $env['SMTP_FROM_NAME'] ?? 'NS Coffee');
+define("SMTP_FROM_NAME", $env['SMTP_FROM_NAME'] ?? 'Cafe Junction');
 
 // Admin bootstrap login (optional)
 define("ADMIN_LOGIN_NAME", $env['ADMIN_LOGIN_NAME'] ?? 'Admin');

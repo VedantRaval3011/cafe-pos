@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Flappy Chef</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 100%; height: 100%; overflow: hidden; background: #1a0a00; }
+  canvas { display: block; margin: 0 auto; }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<script>
+const canvas = document.getElementById('c');
+const ctx    = canvas.getContext('2d');
+
+// Fit inside the iframe
+function resize() {
+  canvas.width  = window.innerWidth;
+  canvas.height = window.innerHeight;
+}
+resize();
+window.addEventListener('resize', () => { resize(); reset(false); });
+
+// ─── Constants ───────────────────────────────────────────────────
+const GRAVITY    = 0.38;
+const FLAP_VEL   = -7.2;
+const PIPE_W     = 52;
+const PIPE_GAP   = 145;
+const PIPE_SPEED = 2.4;
+const BIRD_R     = 18;
+
+// ─── State ───────────────────────────────────────────────────────
+let bird, pipes, score, best, state, frame, pipeTimer;
+
+function reset(started = true) {
+  const H = canvas.height, W = canvas.width;
+  bird   = { x: W * 0.28, y: H / 2, vy: 0, rot: 0, frame: 0 };
+  pipes  = [];
+  score  = 0;
+  frame  = 0;
+  pipeTimer = 0;
+  state  = started ? 'playing' : 'idle';
+  if (!best) best = 0;
+}
+reset(false);
+
+// ─── Input ───────────────────────────────────────────────────────
+function flap() {
+  if (state === 'idle')  { state = 'playing'; }
+  if (state === 'playing') { bird.vy = FLAP_VEL; }
+  if (state === 'dead')  { reset(true); }
+}
+window.addEventListener('keydown',  e => { if (e.code === 'Space' || e.code === 'ArrowUp') { e.preventDefault(); flap(); } });
+window.addEventListener('pointerdown', flap);
+
+// ─── Pipe factory ────────────────────────────────────────────────
+function addPipe() {
+  const H  = canvas.height;
+  const minTop = H * 0.15;
+  const maxTop = H * 0.65;
+  const top = minTop + Math.random() * (maxTop - minTop);
+  pipes.push({ x: canvas.width + PIPE_W, top, scored: false });
+}
+
+// ─── Collision ───────────────────────────────────────────────────
+function hits(p) {
+  const bx = bird.x, by = bird.y, r = BIRD_R - 4;
+  // top pipe rect: p.x .. p.x+PIPE_W, 0 .. p.top
+  // bot pipe rect: p.x .. p.x+PIPE_W, p.top+PIPE_GAP .. H
+  if (bx + r > p.x && bx - r < p.x + PIPE_W) {
+    if (by - r < p.top || by + r > p.top + PIPE_GAP) return true;
+  }
+  return false;
+}
+
+// ─── Draw helpers ────────────────────────────────────────────────
+function roundRect(x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.roundRect(x, y, w, h, r);
+  ctx.fill();
+}
+
+function drawPipe(p) {
+  const H = canvas.height;
+  // green gradient pipes
+  const grad = ctx.createLinearGradient(p.x, 0, p.x + PIPE_W, 0);
+  grad.addColorStop(0, '#2d8a2d');
+  grad.addColorStop(0.5, '#52c452');
+  grad.addColorStop(1, '#1a5a1a');
+  ctx.fillStyle = grad;
+  // top
+  ctx.fillRect(p.x, 0, PIPE_W, p.top);
+  // top cap
+  ctx.fillStyle = '#3da83d';
+  ctx.fillRect(p.x - 5, p.top - 18, PIPE_W + 10, 18);
+  // bottom
+  const botY = p.top + PIPE_GAP;
+  ctx.fillStyle = grad;
+  ctx.fillRect(p.x, botY, PIPE_W, H - botY);
+  // bottom cap
+  ctx.fillStyle = '#3da83d';
+  ctx.fillRect(p.x - 5, botY, PIPE_W + 10, 18);
+}
+
+function drawBird() {
+  ctx.save();
+  ctx.translate(bird.x, bird.y);
+  bird.rot = Math.min(Math.PI / 2, Math.max(-0.4, bird.rot + (bird.vy > 0 ? 0.06 : -0.04)));
+  ctx.rotate(bird.rot);
+
+  // body
+  ctx.fillStyle = '#f5c518';
+  roundRect(-BIRD_R, -BIRD_R * 0.75, BIRD_R * 2, BIRD_R * 1.5, 8);
+
+  // chef hat
+  ctx.fillStyle = '#fff';
+  roundRect(-10, -BIRD_R - 14, 20, 14, 4);
+  ctx.fillStyle = '#eee';
+  roundRect(-13, -BIRD_R, 26, 6, 3);
+
+  // wing (flap)
+  const wingY = Math.sin(frame * 0.4) * 5;
+  ctx.fillStyle = '#e0a800';
+  roundRect(2, -4 + wingY, 14, 10, 4);
+
+  // eye
+  ctx.fillStyle = '#fff';
+  ctx.beginPath(); ctx.arc(8, -4, 6, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = '#222';
+  ctx.beginPath(); ctx.arc(9.5, -4, 3, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = '#fff';
+  ctx.beginPath(); ctx.arc(10.5, -5.5, 1.2, 0, Math.PI * 2); ctx.fill();
+
+  // beak
+  ctx.fillStyle = '#e06000';
+  ctx.beginPath();
+  ctx.moveTo(BIRD_R - 2, -2); ctx.lineTo(BIRD_R + 10, 0); ctx.lineTo(BIRD_R - 2, 4);
+  ctx.closePath(); ctx.fill();
+
+  ctx.restore();
+}
+
+function drawBg() {
+  const W = canvas.width, H = canvas.height;
+  // sky gradient
+  const sky = ctx.createLinearGradient(0, 0, 0, H);
+  sky.addColorStop(0, '#1a0a00');
+  sky.addColorStop(0.6, '#3b1a05');
+  sky.addColorStop(1, '#5c2a08');
+  ctx.fillStyle = sky;
+  ctx.fillRect(0, 0, W, H);
+
+  // ground
+  ctx.fillStyle = '#7a4a1a';
+  ctx.fillRect(0, H - 28, W, 28);
+  ctx.fillStyle = '#5c3510';
+  ctx.fillRect(0, H - 28, W, 6);
+
+  // twinkling dots (stars / coffee beans floating)
+  ctx.fillStyle = 'rgba(255,200,80,0.3)';
+  for (let i = 0; i < 12; i++) {
+    const bx = ((i * 137 + frame * 0.4) % W);
+    const by = 30 + (i * 57) % (H * 0.55);
+    ctx.beginPath(); ctx.arc(bx, by, 1.5, 0, Math.PI * 2); ctx.fill();
+  }
+}
+
+function drawHUD() {
+  const W = canvas.width;
+  ctx.fillStyle = 'rgba(0,0,0,0.45)';
+  roundRect(W / 2 - 52, 12, 104, 44, 10);
+  ctx.fillStyle = '#fff';
+  ctx.font = 'bold 28px sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText(score, W / 2, 46);
+}
+
+function drawIdle() {
+  const W = canvas.width, H = canvas.height;
+  ctx.fillStyle = 'rgba(0,0,0,0.55)';
+  roundRect(W / 2 - 120, H / 2 - 60, 240, 110, 16);
+  ctx.fillStyle = '#ffe066';
+  ctx.font = 'bold 22px sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText('🍳 Flappy Chef', W / 2, H / 2 - 22);
+  ctx.fillStyle = '#fff';
+  ctx.font = '15px sans-serif';
+  ctx.fillText('Tap / Space to flap!', W / 2, H / 2 + 8);
+  ctx.fillStyle = '#aaa';
+  ctx.font = '13px sans-serif';
+  ctx.fillText('Don\'t hit the pipes!', W / 2, H / 2 + 30);
+}
+
+function drawDead() {
+  const W = canvas.width, H = canvas.height;
+  ctx.fillStyle = 'rgba(0,0,0,0.65)';
+  roundRect(W / 2 - 130, H / 2 - 80, 260, 150, 16);
+  ctx.fillStyle = '#ff6b6b';
+  ctx.font = 'bold 24px sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText('😵 Oops!', W / 2, H / 2 - 40);
+  ctx.fillStyle = '#fff';
+  ctx.font = '20px sans-serif';
+  ctx.fillText(`Score: ${score}`, W / 2, H / 2 - 8);
+  ctx.fillStyle = '#ffe066';
+  ctx.font = '16px sans-serif';
+  ctx.fillText(`Best: ${best}`, W / 2, H / 2 + 20);
+  ctx.fillStyle = '#aaffaa';
+  ctx.font = '14px sans-serif';
+  ctx.fillText('Tap / Space to play again', W / 2, H / 2 + 50);
+}
+
+// ─── Main loop ───────────────────────────────────────────────────
+function loop() {
+  requestAnimationFrame(loop);
+  const W = canvas.width, H = canvas.height;
+
+  drawBg();
+
+  if (state === 'playing') {
+    frame++;
+    pipeTimer++;
+
+    // Physics
+    bird.vy += GRAVITY;
+    bird.y  += bird.vy;
+
+    // Spawn pipes
+    if (pipeTimer > 82) { addPipe(); pipeTimer = 0; }
+
+    // Update + cull pipes
+    pipes = pipes.filter(p => p.x + PIPE_W > -20);
+    for (const p of pipes) {
+      p.x -= PIPE_SPEED;
+      if (!p.scored && p.x + PIPE_W < bird.x) {
+        p.scored = true;
+        score++;
+      }
+      if (hits(p)) { state = 'dead'; best = Math.max(best, score); }
+      drawPipe(p);
+    }
+
+    // Ground / ceiling collision
+    if (bird.y + BIRD_R > H - 28 || bird.y - BIRD_R < 0) {
+      state = 'dead'; best = Math.max(best, score);
+    }
+
+    drawBird();
+    drawHUD();
+  } else if (state === 'idle') {
+    drawBird();
+    drawIdle();
+  } else {
+    // dead — show bird at crash spot
+    drawBird();
+    drawDead();
+  }
+}
+loop();
+</script>
+</body>
+</html>

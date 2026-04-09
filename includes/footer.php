@@ -82,11 +82,10 @@
           <div class="block-23 mb-3">
             <ul>
               <li>
-                <span class="icon icon-map-marker"></span><span class="text">203 Fake St. Mountain View, San Francisco, California,
-                  USA</span>
+                <span class="icon icon-map-marker"></span><span class="text">Shop 4, CG Road, Navrangpura, Ahmedabad, Gujarat 380009 — Vadodara &amp; Gandhinagar</span>
               </li>
               <li>
-                <a href="#"><span class="icon icon-phone"></span><span class="text">+91 392 3929 210</span></a>
+                <a href="#"><span class="icon icon-phone"></span><span class="text">+91 98765 43210</span></a>
               </li>
               <li>
                 <a href="#"><span class="icon icon-envelope"></span><span class="text">info@yourdomain.com</span></a>

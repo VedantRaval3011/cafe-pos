@@ -9,8 +9,8 @@ require_once __DIR__ . '/../config/config.php'; // Include the configuration fil
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="NS Coffee Delicious Taste, offers a delicious taste of freshly brewed coffee, a variety of menu options, and excellent services. Visit us to enjoy a great coffee experience. Made with love by Nikhil Singh" />
-  <title>NS Coffee | Delicious Taste</title>
+  <meta name="description" content="Cafe Junction Delicious Taste, offers a delicious taste of freshly brewed coffee, a variety of menu options, and excellent services. Visit us to enjoy a great coffee experience. Made with love by Nikhil Singh" />
+  <title>Cafe Junction | Delicious Taste</title>
   <link rel="icon" type="image/x-icon" href="<?php echo url; ?>/images/logo.png">
   <!-- Poppins -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -51,7 +51,7 @@ require_once __DIR__ . '/../config/config.php'; // Include the configuration fil
 <body>
   <nav class="navbar navbar-expand-lg navbar-dark ftco_navbar bg-dark ftco-navbar-light" id="ftco-navbar">
     <div class="container">
-      <a class="navbar-brand" href="<?php echo url; ?>/index.php">N.S &nbsp;&nbsp;Coffee<small>Delicious Taste</small></a>
+      <a class="navbar-brand" href="<?php echo url; ?>/index.php">Cafe Junction<small>Delicious Taste</small></a>
       <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#ftco-nav" aria-controls="ftco-nav" aria-expanded="false" aria-label="Toggle navigation">
         <span class="oi oi-menu"></span> Menu
       </button>

@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>2048 Chef</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body {
+    width: 100%; height: 100%; overflow: hidden;
+    background: #1a0a00; font-family: 'Segoe UI', Arial, sans-serif;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    user-select: none;
+  }
+  #hud {
+    display: flex; gap: 16px; margin-bottom: 10px;
+  }
+  .hud-box {
+    background: rgba(255,255,255,0.08); border-radius: 8px;
+    padding: 4px 14px; text-align: center; min-width: 70px;
+  }
+  .hud-label { font-size: 10px; color: #b8860b; text-transform: uppercase; letter-spacing: 1px; }
+  .hud-val   { font-size: 20px; font-weight: bold; color: #fff; }
+  #board {
+    display: grid; grid-template-columns: repeat(4, 1fr);
+    gap: 8px; padding: 8px; background: #3b1a05;
+    border-radius: 12px; touch-action: none;
+  }
+  .cell {
+    width: 72px; height: 72px; border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: bold; font-size: 22px; color: #fff;
+    background: rgba(255,255,255,0.07);
+    transition: transform 0.08s ease, background 0.1s;
+  }
+  .cell.bump { animation: bump 0.12s ease; }
+  @keyframes bump { 0%{transform:scale(1)} 50%{transform:scale(1.18)} 100%{transform:scale(1)} }
+  #msg {
+    margin-top: 10px; font-size: 14px; color: #ffe066;
+    min-height: 20px; text-align: center;
+  }
+  #restart {
+    margin-top: 8px; padding: 7px 22px; border: none; border-radius: 8px;
+    background: #b8860b; color: #fff; font-size: 14px; cursor: pointer;
+    font-weight: bold; transition: background 0.15s;
+  }
+  #restart:hover { background: #d4a017; }
+</style>
+</head>
+<body>
+<div id="hud">
+  <div class="hud-box"><div class="hud-label">Score</div><div class="hud-val" id="score">0</div></div>
+  <div class="hud-box"><div class="hud-label">Best</div><div class="hud-val" id="best">0</div></div>
+</div>
+<div id="board"></div>
+<div id="msg">Swipe or use arrow keys!</div>
+<button id="restart">New Game</button>
+
+<script>
+// ─── Tile colours ─────────────────────────────────────────────────
+const COLORS = {
+  0:    'rgba(255,255,255,0.07)',
+  2:    '#b5651d', 4:    '#a0522d', 8:    '#cd853f',
+  16:   '#d2691e', 32:   '#c0392b', 64:   '#e74c3c',
+  128:  '#8e44ad', 256:  '#9b59b6', 512:  '#2980b9',
+  1024: '#27ae60', 2048: '#f39c12',
+};
+const FOOD = {
+  2:'☕', 4:'🍩', 8:'🧁', 16:'🍰', 32:'🥐',
+  64:'🍕', 128:'🍔', 256:'🌮', 512:'🍜', 1024:'🥩', 2048:'👑',
+};
+
+// ─── Game state ───────────────────────────────────────────────────
+let grid, score, best = 0, over;
+
+function newGrid() { return Array.from({length: 4}, () => Array(4).fill(0)); }
+
+function start() {
+  grid = newGrid(); score = 0; over = false;
+  addTile(); addTile();
+  render();
+  document.getElementById('msg').textContent = 'Swipe or use arrow keys!';
+}
+
+function addTile() {
+  const empty = [];
+  for (let r = 0; r < 4; r++) for (let c = 0; c < 4; c++) if (!grid[r][c]) empty.push([r,c]);
+  if (!empty.length) return;
+  const [r, c] = empty[Math.floor(Math.random() * empty.length)];
+  grid[r][c] = Math.random() < 0.85 ? 2 : 4;
+}
+
+// ─── Move logic ───────────────────────────────────────────────────
+function slideRow(row) {
+  let arr = row.filter(v => v);
+  for (let i = 0; i < arr.length - 1; i++) {
+    if (arr[i] === arr[i+1]) {
+      arr[i] *= 2; score += arr[i];
+      arr.splice(i+1, 1); i++;
+    }
+  }
+  while (arr.length < 4) arr.push(0);
+  return arr;
+}
+
+function rotCW(g)  { return g[0].map((_,i) => g.map(r => r[i]).reverse()); }
+function rotCCW(g) { return g[0].map((_,i) => g.map(r => r[i])).reverse().map(r => [...r].reverse()).map(r => [...r]); }
+// simpler CCW:
+function transpose(g) { return g[0].map((_,i) => g.map(r => r[i])); }
+
+function move(dir) {
+  let g = grid.map(r => [...r]);
+  if (dir === 'left')  g = g.map(slideRow);
+  if (dir === 'right') g = g.map(r => slideRow([...r].reverse()).reverse());
+  if (dir === 'up')    { g = transpose(g); g = g.map(slideRow); g = transpose(g); }
+  if (dir === 'down')  { g = transpose(g); g = g.map(r => slideRow([...r].reverse()).reverse()); g = transpose(g); }
+
+  if (JSON.stringify(g) !== JSON.stringify(grid)) {
+    grid = g; addTile();
+    if (score > best) best = score;
+    render();
+    checkOver();
+  }
+}
+
+function checkOver() {
+  for (let r = 0; r < 4; r++) for (let c = 0; c < 4; c++) {
+    if (!grid[r][c]) return;
+    if (c < 3 && grid[r][c] === grid[r][c+1]) return;
+    if (r < 3 && grid[r][c] === grid[r+1][c]) return;
+  }
+  over = true;
+  document.getElementById('msg').textContent = '😵 Game Over! Tap New Game';
+}
+
+// ─── Render ───────────────────────────────────────────────────────
+function render() {
+  const board = document.getElementById('board');
+  board.innerHTML = '';
+  for (let r = 0; r < 4; r++) for (let c = 0; c < 4; c++) {
+    const v   = grid[r][c];
+    const cel = document.createElement('div');
+    cel.className = 'cell' + (v ? ' bump' : '');
+    cel.style.background = COLORS[Math.min(v, 2048)] || '#1a5276';
+    cel.style.fontSize = v >= 1024 ? '16px' : v >= 128 ? '20px' : '22px';
+    cel.textContent = v ? (FOOD[v] || v) : '';
+    board.appendChild(cel);
+  }
+  document.getElementById('score').textContent = score;
+  document.getElementById('best').textContent  = best;
+}
+
+// ─── Keyboard input ───────────────────────────────────────────────
+window.addEventListener('keydown', e => {
+  if (over) return;
+  const map = { ArrowLeft:'left', ArrowRight:'right', ArrowUp:'up', ArrowDown:'down' };
+  if (map[e.key]) { e.preventDefault(); move(map[e.key]); }
+});
+
+// ─── Touch / swipe ────────────────────────────────────────────────
+let tx = 0, ty = 0;
+document.getElementById('board').addEventListener('pointerdown', e => { tx = e.clientX; ty = e.clientY; });
+document.getElementById('board').addEventListener('pointerup', e => {
+  if (over) return;
+  const dx = e.clientX - tx, dy = e.clientY - ty;
+  if (Math.abs(dx) < 10 && Math.abs(dy) < 10) return;
+  if (Math.abs(dx) > Math.abs(dy)) move(dx > 0 ? 'right' : 'left');
+  else                              move(dy > 0 ? 'down'  : 'up');
+});
+
+document.getElementById('restart').onclick = start;
+
+// ─── Boot ─────────────────────────────────────────────────────────
+start();
+</script>
+</body>
+</html>

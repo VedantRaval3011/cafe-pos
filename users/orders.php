@@ -78,7 +78,7 @@ $result = mysqli_query($conn, $query) or die("Query Unsuccessful");
                                             <?php echo $order['status']; ?>
                                         </td>
                                         <td>
-                                            $<?php echo $order['total_price']; ?>
+                                            ₹<?php echo number_format((float)$order['total_price'], 2); ?>
                                         </td>
                                     </tr>
                                 <?php }

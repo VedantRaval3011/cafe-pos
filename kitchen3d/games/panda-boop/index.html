@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Panda Boop!</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body {
+    width: 100%; height: 100%; overflow: hidden;
+    background: #1a0a00;
+    font-family: 'Segoe UI', Arial, sans-serif;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    user-select: none; touch-action: none;
+  }
+
+  /* ── HUD ── */
+  #hud {
+    display: flex; gap: 12px; margin-bottom: 12px; z-index: 10;
+  }
+  .hud-box {
+    background: rgba(255,255,255,0.09);
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 10px; padding: 5px 18px;
+    text-align: center; min-width: 80px;
+  }
+  .hud-label { font-size: 9px; color: #b8860b; text-transform: uppercase; letter-spacing: 1.5px; }
+  .hud-val   { font-size: 22px; font-weight: 800; color: #fff; line-height: 1.2; }
+  #timer-bar-wrap {
+    width: min(340px, 90vw); height: 6px;
+    background: rgba(255,255,255,0.1); border-radius: 3px;
+    margin-bottom: 14px; overflow: hidden;
+  }
+  #timer-bar {
+    height: 100%; width: 100%; border-radius: 3px;
+    background: linear-gradient(90deg, #ff6b35, #ffd700);
+    transition: width 0.1s linear;
+  }
+
+  /* ── GRID ── */
+  #grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    padding: 14px;
+    background: rgba(255,255,255,0.05);
+    border-radius: 18px;
+    border: 1px solid rgba(255,255,255,0.08);
+    width: min(340px, 92vw);
+  }
+  .hole {
+    position: relative;
+    width: 100%; aspect-ratio: 1;
+    background: #120500;
+    border-radius: 50%;
+    border: 3px solid #3b1a05;
+    overflow: hidden;
+    cursor: pointer;
+    box-shadow: inset 0 6px 14px rgba(0,0,0,0.7);
+    transition: box-shadow 0.1s;
+  }
+  .hole:active { box-shadow: inset 0 3px 8px rgba(0,0,0,0.5); }
+
+  .panda {
+    position: absolute;
+    left: 50%; bottom: -110%;
+    transform: translateX(-50%);
+    font-size: clamp(36px, 10vw, 52px);
+    line-height: 1;
+    transition: bottom 0.24s cubic-bezier(0.22, 1, 0.36, 1);
+    will-change: bottom;
+    filter: drop-shadow(0 -4px 6px rgba(0,0,0,0.5));
+  }
+  .panda.up   { bottom: 8%; }
+  .panda.hide { bottom: -110%; transition: bottom 0.2s ease-in; }
+  .panda.booped {
+    bottom: 8%;
+    transition: none;
+    filter: drop-shadow(0 0 10px #ffd700) drop-shadow(0 -4px 6px rgba(0,0,0,0.5));
+    animation: boop-spin 0.2s ease forwards;
+  }
+  @keyframes boop-spin {
+    0%   { transform: translateX(-50%) scale(1) rotate(0deg); }
+    40%  { transform: translateX(-50%) scale(1.35) rotate(-12deg); }
+    100% { transform: translateX(-50%) scale(0.7) rotate(20deg); opacity: 0; }
+  }
+
+  /* ── BOMB ── */
+  .panda.bomb {
+    filter: drop-shadow(0 0 8px #ff2200) drop-shadow(0 -4px 6px rgba(0,0,0,0.5));
+    animation: bomb-wobble 0.35s ease infinite alternate;
+  }
+  @keyframes bomb-wobble {
+    0%   { transform: translateX(-50%) rotate(-8deg) scale(1.0); }
+    100% { transform: translateX(-50%) rotate(8deg)  scale(1.08); }
+  }
+  .panda.bomb-explode {
+    bottom: 8%;
+    transition: none;
+    animation: bomb-explode 0.35s ease forwards;
+  }
+  @keyframes bomb-explode {
+    0%   { transform: translateX(-50%) scale(1);    opacity: 1; filter: drop-shadow(0 0 4px #ff2200); }
+    40%  { transform: translateX(-50%) scale(2.8);  opacity: 1; filter: drop-shadow(0 0 24px #ff6600) brightness(2); }
+    100% { transform: translateX(-50%) scale(0.2);  opacity: 0; filter: drop-shadow(0 0 0px #ff0000); }
+  }
+  /* shake the whole page on bomb */
+  @keyframes screen-shake {
+    0%,100% { transform: translateX(0); }
+    20%     { transform: translateX(-8px) rotate(-1deg); }
+    40%     { transform: translateX(8px)  rotate(1deg); }
+    60%     { transform: translateX(-6px) rotate(-0.5deg); }
+    80%     { transform: translateX(6px)  rotate(0.5deg); }
+  }
+  body.shake { animation: screen-shake 0.4s ease; }
+
+  /* hole flashes red on bomb tap */
+  .hole.bomb-flash { background: #ff2200 !important; transition: background 0.05s; }
+
+  /* ── SCORE POP ── */
+  .score-pop {
+    position: fixed; pointer-events: none;
+    font-size: 28px; font-weight: 900;
+    color: #ffd700; text-shadow: 0 2px 6px #000;
+    animation: pop-up 0.7s ease forwards;
+    z-index: 999;
+  }
+  @keyframes pop-up {
+    0%   { opacity: 1; transform: translateY(0) scale(1); }
+    100% { opacity: 0; transform: translateY(-60px) scale(1.4); }
+  }
+
+  /* ── OVERLAYS ── */
+  .overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(10,4,0,0.88);
+    flex-direction: column; align-items: center; justify-content: center;
+    z-index: 100; gap: 12px;
+  }
+  .overlay.show { display: flex; }
+  .overlay h1 { font-size: clamp(28px, 8vw, 42px); color: #ffd700; font-weight: 900; text-align: center; }
+  .overlay h1.bomb-title { color: #ff4400; text-shadow: 0 0 20px #ff220088; }
+  .overlay p  { font-size: clamp(13px, 3.5vw, 16px); color: #ddd; text-align: center; max-width: 280px; }
+  .overlay .big-emoji { font-size: clamp(60px, 18vw, 90px); line-height: 1; }
+  .btn {
+    margin-top: 8px; padding: 13px 40px;
+    border: none; border-radius: 12px;
+    background: linear-gradient(135deg, #b8860b, #ffd700);
+    color: #1a0a00; font-size: 17px; font-weight: 800;
+    cursor: pointer; letter-spacing: 0.5px;
+    box-shadow: 0 4px 16px rgba(255,215,0,0.3);
+    transition: transform 0.1s, box-shadow 0.1s;
+  }
+  .btn:active { transform: scale(0.96); box-shadow: 0 2px 8px rgba(255,215,0,0.2); }
+
+  #final-score { font-size: clamp(20px, 6vw, 28px); color: #fff; font-weight: 700; }
+  #final-best  { font-size: 13px; color: #b8860b; }
+  #combo-badge {
+    position: fixed; top: 12px; left: 50%; transform: translateX(-50%);
+    background: linear-gradient(135deg, #ff6b35, #ffd700);
+    color: #1a0a00; font-weight: 900; font-size: 15px;
+    padding: 4px 16px; border-radius: 20px;
+    opacity: 0; transition: opacity 0.2s;
+    pointer-events: none; z-index: 200;
+    white-space: nowrap;
+  }
+  #combo-badge.show { opacity: 1; }
+</style>
+</head>
+<body>
+
+<div id="hud">
+  <div class="hud-box"><div class="hud-label">Score</div><div class="hud-val" id="score-val">0</div></div>
+  <div class="hud-box"><div class="hud-label">Time</div><div class="hud-val" id="time-val">30</div></div>
+  <div class="hud-box"><div class="hud-label">Best</div><div class="hud-val" id="best-val">0</div></div>
+</div>
+
+<div id="timer-bar-wrap"><div id="timer-bar"></div></div>
+
+<div id="grid"></div>
+
+<div id="combo-badge"></div>
+
+<!-- Start overlay -->
+<div class="overlay show" id="start-overlay">
+  <div class="big-emoji">🐼</div>
+  <h1>Panda Boop!</h1>
+  <p>Tap the pandas before they hide!<br>Combos earn bonus points.<br><strong style="color:#ff6b35">💣 Avoid the bombs!</strong></p>
+  <button class="btn" id="start-btn">Play!</button>
+</div>
+
+<!-- Game over overlay -->
+<div class="overlay" id="gameover-overlay">
+  <div class="big-emoji" id="result-emoji">🐼</div>
+  <h1 id="gameover-title">Time's up!</h1>
+  <div id="final-score"></div>
+  <div id="final-best"></div>
+  <button class="btn" id="replay-btn">Play Again</button>
+</div>
+
+<script>
+const TOTAL_TIME = 30;
+const HOLES      = 9;
+
+const scoreEl    = document.getElementById('score-val');
+const timeEl     = document.getElementById('time-val');
+const bestEl     = document.getElementById('best-val');
+const timerBar   = document.getElementById('timer-bar');
+const grid       = document.getElementById('grid');
+const comboBadge = document.getElementById('combo-badge');
+
+let score    = 0;
+let best     = parseInt(localStorage.getItem('pandaBest') || '0', 10);
+let timeLeft = TOTAL_TIME;
+let combo    = 0, comboTimer = null;
+let tickInterval = null, spawnTimeout = null;
+let running  = false;
+let bombDeath = false;
+let activeHoles = new Set();  // idx → 'panda'|'bear'|'fox'|'bomb'
+let holeTypes   = {};         // idx → type string
+let hideTimers  = {};
+
+// ── Build grid ──────────────────────────────────────────────────────
+const holes = [];
+for (let i = 0; i < HOLES; i++) {
+  const hole  = document.createElement('div');
+  hole.className = 'hole';
+  const panda = document.createElement('div');
+  panda.className = 'panda';
+  panda.textContent = '🐼';
+  hole.appendChild(panda);
+  hole.addEventListener('pointerdown', (e) => { e.preventDefault(); boop(i); });
+  grid.appendChild(hole);
+  holes.push({ hole, panda });
+}
+
+bestEl.textContent = best;
+
+// ── Game flow ────────────────────────────────────────────────────────
+document.getElementById('start-btn').addEventListener('click', startGame);
+document.getElementById('replay-btn').addEventListener('click', startGame);
+
+function startGame() {
+  score = 0; timeLeft = TOTAL_TIME; combo = 0; bombDeath = false;
+  activeHoles.clear();
+  holeTypes = {};
+  clearTimeout(spawnTimeout);
+  clearInterval(tickInterval);
+  Object.keys(hideTimers).forEach(k => clearTimeout(hideTimers[k]));
+  hideTimers = {};
+  holes.forEach(({ panda, hole }) => {
+    panda.className = 'panda';
+    panda.textContent = '🐼';
+    hole.classList.remove('bomb-flash');
+  });
+
+  scoreEl.textContent = '0';
+  timeEl.textContent  = TOTAL_TIME;
+  timerBar.style.width = '100%';
+  timerBar.style.background = 'linear-gradient(90deg, #ff6b35, #ffd700)';
+
+  document.getElementById('start-overlay').classList.remove('show');
+  document.getElementById('gameover-overlay').classList.remove('show');
+
+  running = true;
+  scheduleSpawn();
+
+  let elapsed = 0;
+  tickInterval = setInterval(() => {
+    if (!running) return;
+    elapsed += 100;
+    timeLeft = Math.max(0, TOTAL_TIME - elapsed / 1000);
+    const pct = timeLeft / TOTAL_TIME;
+    timerBar.style.width = (pct * 100) + '%';
+    if (elapsed > (TOTAL_TIME - 10) * 1000) {
+      timerBar.style.background = 'linear-gradient(90deg, #cc0000, #ff6b35)';
+    }
+    const secs = Math.ceil(timeLeft);
+    if (secs !== parseInt(timeEl.textContent, 10)) timeEl.textContent = secs;
+    if (elapsed >= TOTAL_TIME * 1000) endGame(false);
+  }, 100);
+}
+
+function endGame(isBomb) {
+  if (!running) return;
+  running = false;
+  bombDeath = isBomb;
+  clearInterval(tickInterval);
+  clearTimeout(spawnTimeout);
+  Object.keys(hideTimers).forEach(k => clearTimeout(hideTimers[k]));
+  hideTimers = {};
+  holes.forEach(({ panda }) => { panda.className = 'panda hide'; });
+
+  if (score > best) {
+    best = score;
+    localStorage.setItem('pandaBest', best);
+  }
+  bestEl.textContent = best;
+
+  const resultEl    = document.getElementById('result-emoji');
+  const titleEl     = document.getElementById('gameover-title');
+  const finalScore  = document.getElementById('final-score');
+  const finalBest   = document.getElementById('final-best');
+
+  if (isBomb) {
+    resultEl.textContent = '💥';
+    titleEl.textContent  = 'BOOM! Game Over!';
+    titleEl.className    = 'bomb-title';
+    finalScore.textContent = `Score: ${score}`;
+    finalBest.textContent  = `Watch out for bombs! Best: ${best}`;
+  } else {
+    resultEl.textContent = score >= 20 ? '🏆' : score >= 10 ? '⭐' : '🐼';
+    titleEl.textContent  = "Time's up!";
+    titleEl.className    = '';
+    finalScore.textContent = `Score: ${score}`;
+    finalBest.textContent  = score > 0 && score >= best ? '🎉 New Best!' : `Best: ${best}`;
+  }
+
+  setTimeout(() => {
+    document.getElementById('gameover-overlay').classList.add('show');
+  }, isBomb ? 420 : 0);
+}
+
+// ── Spawning ────────────────────────────────────────────────────────
+function progress() { return (TOTAL_TIME - timeLeft) / TOTAL_TIME; }
+
+function spawnDelay() {
+  // 920ms → 380ms (slower spawns than original 580→200)
+  return Math.max(380, 920 - progress() * 540);
+}
+
+function stayDuration() {
+  // 1200ms → 520ms (was 850→330)
+  return Math.max(520, 1200 - progress() * 680);
+}
+
+function bombStayDuration() {
+  // 1900ms → 950ms (was 1300→650)
+  return Math.max(950, 1900 - progress() * 950);
+}
+
+function scheduleSpawn() {
+  if (!running) return;
+  spawnTimeout = setTimeout(() => {
+    if (!running) return;
+    spawnOne();
+    scheduleSpawn();
+  }, spawnDelay());
+}
+
+function spawnOne() {
+  const p = progress();
+  // Max simultaneous up: starts at 2, grows to 5
+  const maxUp = Math.min(5, 2 + Math.floor(p * 4));
+  if (activeHoles.size >= maxUp) return;
+
+  const idle = Array.from({ length: HOLES }, (_, i) => i).filter(i => !activeHoles.has(i));
+  if (idle.length === 0) return;
+  const idx = idle[Math.floor(Math.random() * idle.length)];
+
+  // Bomb chance: 0% first 5s, ramps to ~28% by end
+  const bombChance = p > 0.17 ? Math.min(0.28, (p - 0.17) * 0.55) : 0;
+  const roll = Math.random();
+
+  let type, emoji, cssExtra = '';
+  if (roll < bombChance) {
+    type = 'bomb'; emoji = '💣'; cssExtra = ' bomb';
+  } else if (p > 0.6 && roll < bombChance + 0.18) {
+    type = 'fox';  emoji = '🦊';
+  } else if (p > 0.3 && roll < bombChance + 0.32) {
+    type = 'bear'; emoji = '🐻';
+  } else {
+    type = 'panda'; emoji = '🐼';
+  }
+
+  const { panda } = holes[idx];
+  panda.textContent = emoji;
+  panda.className   = 'panda up' + cssExtra;
+  activeHoles.add(idx);
+  holeTypes[idx] = type;
+
+  const duration = type === 'bomb' ? bombStayDuration() : stayDuration();
+  hideTimers[idx] = setTimeout(() => hideSlot(idx), duration);
+}
+
+function hideSlot(idx) {
+  if (!activeHoles.has(idx)) return;
+  activeHoles.delete(idx);
+  delete holeTypes[idx];
+  clearTimeout(hideTimers[idx]);
+  const { panda } = holes[idx];
+  panda.className = 'panda hide';
+  setTimeout(() => { panda.className = 'panda'; panda.textContent = '🐼'; }, 220);
+}
+
+// ── Booping ──────────────────────────────────────────────────────────
+function boop(idx) {
+  if (!running) return;
+  if (!activeHoles.has(idx)) return;
+
+  const type = holeTypes[idx];
+  activeHoles.delete(idx);
+  delete holeTypes[idx];
+  clearTimeout(hideTimers[idx]);
+
+  const { panda, hole } = holes[idx];
+
+  // ── Bomb hit ──
+  if (type === 'bomb') {
+    panda.className = 'panda bomb-explode';
+    hole.classList.add('bomb-flash');
+    document.body.classList.remove('shake');
+    void document.body.offsetWidth; // reflow to restart animation
+    document.body.classList.add('shake');
+    document.body.addEventListener('animationend', () => document.body.classList.remove('shake'), { once: true });
+    setTimeout(() => { hole.classList.remove('bomb-flash'); }, 300);
+    endGame(true);
+    return;
+  }
+
+  // ── Normal hit ──
+  const pts = type === 'fox' ? 3 : type === 'bear' ? 2 : 1;
+  panda.className = 'panda booped';
+  panda.addEventListener('animationend', () => {
+    panda.className = 'panda';
+    panda.textContent = '🐼';
+  }, { once: true });
+
+  combo++;
+  clearTimeout(comboTimer);
+  comboTimer = setTimeout(() => { combo = 0; }, 1000);
+
+  const total = combo > 1 ? pts * combo : pts;
+  score += total;
+  scoreEl.textContent = score;
+
+  showScorePop(hole, total, combo);
+  if (combo >= 3) showCombo(combo);
+}
+
+function showScorePop(hole, pts, comb) {
+  const rect = hole.getBoundingClientRect();
+  const pop  = document.createElement('div');
+  pop.className   = 'score-pop';
+  pop.textContent = comb > 1 ? `+${pts} x${comb}!` : `+${pts}`;
+  pop.style.left  = (rect.left + rect.width / 2 - 30) + 'px';
+  pop.style.top   = (rect.top - 10) + 'px';
+  document.body.appendChild(pop);
+  pop.addEventListener('animationend', () => pop.remove());
+}
+
+function showCombo(n) {
+  comboBadge.textContent = n >= 6 ? `🔥 MEGA x${n}!` : n >= 4 ? `⚡ COMBO x${n}!` : `✨ COMBO x${n}`;
+  comboBadge.classList.add('show');
+  clearTimeout(comboBadge._t);
+  comboBadge._t = setTimeout(() => comboBadge.classList.remove('show'), 900);
+}
+</script>
+</body>
+</html>

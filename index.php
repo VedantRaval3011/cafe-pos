@@ -1,10 +1,87 @@
 <?php require_once "includes/header.php"; ?>
 
-<section class="home-slider owl-carousel">
-  <div class="slider-item" style="background-image: url(images/bg_1.jpg)">
-    <div class="overlay"></div>
+<style>
+  .hero-video-section {
+    position: relative;
+    height: 750px;
+    overflow: hidden;
+  }
+  .hero-video-section .hero-bg-video {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    z-index: 0;
+  }
+  .hero-video-section .overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    background: rgba(0, 0, 0, 0.3);
+  }
+  .hero-video-section .hero-content {
+    position: relative;
+    z-index: 2;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    color: #fff;
+  }
+  .hero-video-section .subheading {
+    display: block;
+    font-family: "Great Vibes", cursive;
+    font-size: 30px;
+    color: #c49b63;
+  }
+  .hero-video-section h1 {
+    text-transform: uppercase;
+    font-size: 40px;
+    color: #fff;
+    line-height: 1.5;
+    font-weight: normal;
+    letter-spacing: 1px;
+  }
+  .hero-video-section p {
+    font-size: 18px;
+    line-height: 1.5;
+    font-weight: 300;
+    color: #fff;
+  }
+  @media (max-width: 991.98px) {
+    .hero-video-section h1 { font-size: 30px; }
+  }
+  @media (max-width: 767px) {
+    .hero-video-section { height: 600px; }
+  }
+</style>
+
+<?php
+if (!empty($_SESSION['flash_booking'])) {
+    $fb = $_SESSION['flash_booking'];
+    unset($_SESSION['flash_booking']);
+    ?>
+    <div class="container" style="margin-top:96px;">
+      <div class="alert alert-<?php echo $fb['type'] === 'ok' ? 'success' : 'danger'; ?> mb-0 py-3"><?php echo htmlspecialchars($fb['msg']); ?></div>
+    </div>
+<?php } ?>
+
+<section class="hero-video-section">
+  <video
+    class="hero-bg-video"
+    src="<?php echo url; ?>/videos/7592876-uhd_4096_1974_30fps.mp4"
+    autoplay
+    muted
+    loop
+    playsinline
+    preload="auto"
+  ></video>
+  <div class="overlay"></div>
+  <div class="hero-content">
     <div class="container">
-      <div class="row slider-text justify-content-center align-items-center" data-scrollax-parent="true">
+      <div class="row justify-content-center">
         <div class="col-md-8 col-sm-12 text-center ftco-animate">
           <span class="subheading">Welcome</span>
           <h1 class="mb-4">The Best Coffee Testing Experience</h1>
@@ -20,49 +97,9 @@
       </div>
     </div>
   </div>
-
-  <div class="slider-item" style="background-image: url(images/bg_2.jpg)">
-    <div class="overlay"></div>
-    <div class="container">
-      <div class="row slider-text justify-content-center align-items-center" data-scrollax-parent="true">
-        <div class="col-md-8 col-sm-12 text-center ftco-animate">
-          <span class="subheading">Welcome</span>
-          <h1 class="mb-4">Amazing Taste &amp; Beautiful Place</h1>
-          <p class="mb-4 mb-md-5">
-            A small river named Duden flows by their place and supplies it
-            with the necessary regelialia.
-          </p>
-          <p>
-            <a href="auth/login.php" class="btn btn-primary p-3 px-xl-4 py-xl-3">Order Now</a>
-            <a href="menu.php" class="btn btn-white btn-outline-white p-3 px-xl-4 py-xl-3">View Menu</a>
-          </p>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <div class="slider-item" style="background-image: url(images/bg_3.jpg)">
-    <div class="overlay"></div>
-    <div class="container">
-      <div class="row slider-text justify-content-center align-items-center" data-scrollax-parent="true">
-        <div class="col-md-8 col-sm-12 text-center ftco-animate">
-          <span class="subheading">Welcome</span>
-          <h1 class="mb-4">Creamy Hot and Ready to Serve</h1>
-          <p class="mb-4 mb-md-5">
-            A small river named Duden flows by their place and supplies it
-            with the necessary regelialia.
-          </p>
-          <p>
-            <a href="auth/login.php" class="btn btn-primary p-3 px-xl-4 py-xl-3">Order Now</a>
-            <a href="menu.php" class="btn btn-white btn-outline-white p-3 px-xl-4 py-xl-3">View Menu</a>
-          </p>
-        </div>
-      </div>
-    </div>
-  </div>
 </section>
 
-<section class="ftco-intro">
+<section class="ftco-intro" id="ftco-intro">
   <div class="container-wrap">
     <div class="wrap d-md-flex align-items-xl-end">
       <div class="info">
@@ -70,7 +107,7 @@
           <div class="col-md-4 d-flex ftco-animate">
             <div class="icon"><span class="icon-phone"></span></div>
             <div class="text">
-              <h3>000 (123) 456 7890</h3>
+              <h3>+91 98765 43210</h3>
               <p>
                 A small river named Duden flows by their place and supplies.
               </p>
@@ -79,9 +116,9 @@
           <div class="col-md-4 d-flex ftco-animate">
             <div class="icon"><span class="icon-my_location"></span></div>
             <div class="text">
-              <h3>198 West 21th Street</h3>
+              <h3>Ahmedabad · Vadodara · Gandhinagar</h3>
               <p>
-                203 Fake St. Mountain View, San Francisco, California, USA
+                Shop 4, CG Road, Navrangpura, Ahmedabad, Gujarat 380009, India — also serving Vadodara &amp; Gandhinagar
               </p>
             </div>
           </div>
@@ -96,13 +133,25 @@
       </div>
       <div class="book p-4">
         <h3>Book a Table</h3>
+        <?php if (BOOKING_FEE_INR > 0) { ?>
+          <p class="text-white mb-3" style="opacity:0.9;font-size:14px;">Online holding fee: <strong>₹<?php echo htmlspecialchars(number_format(BOOKING_FEE_INR, 0)); ?></strong> via Razorpay after you submit.</p>
+        <?php } ?>
         <form action="booking/book.php" method="POST" class="appointment-form">
+          <input type="hidden" name="return_to" value="index" />
           <div class="d-md-flex">
             <div class="form-group">
               <input type="text" id="first_name" name="first_name" class="form-control" placeholder="First Name*" />
             </div>
             <div class="form-group ml-md-4">
               <input type="text" id="last_name" name="last_name" class="form-control" placeholder="Last Name" />
+            </div>
+          </div>
+          <div class="d-md-flex">
+            <div class="form-group">
+              <input type="email" id="booking_email" name="email" class="form-control" placeholder="Email*" />
+            </div>
+            <div class="form-group ml-md-4">
+              <input type="text" id="phone" name="phone" class="form-control" placeholder="Phone*" />
             </div>
           </div>
           <div class="d-md-flex">
@@ -119,9 +168,6 @@
                 <div class="icon"><span class="ion-ios-clock"></span></div>
                 <input type="text" id="time" name="time" class="form-control appointment_time" placeholder="Time*" />
               </div>
-            </div>
-            <div class="form-group ml-md-4">
-              <input type="text" id="phone" name="phone" class="form-control" placeholder="Phone*" />
             </div>
           </div>
           <div class="d-md-flex">
@@ -348,7 +394,7 @@
                 <p>
                   <?php echo $product['description']; ?>
                 </p>
-                <p class="price"><span>$<?php echo $product['price']; ?></span></p>
+                <p class="price"><span>₹<?php echo htmlspecialchars($product['price']); ?></span></p>
                 <p>
                   <a href="products/product-single.php?id=<?php echo $product['id']; ?>" class="btn btn-primary btn-outline-primary">Show</a>
                 </p>
@@ -525,12 +571,12 @@
   const date = document.querySelector("#date");
   const time = document.querySelector("#time");
   const phone = document.querySelector("#phone");
+  const bookingEmail = document.querySelector("#booking_email");
 
-  //form authentication
   bookTableForm.addEventListener("submit", (e) => {
-    if (firstName.value === "" || date.value === "" || time.value === "" || phone.value === "") {
+    if (firstName.value === "" || date.value === "" || time.value === "" || phone.value === "" || !bookingEmail || bookingEmail.value === "") {
       e.preventDefault();
-      alert("Please fill all the Mandatory details !!");
+      alert("Please fill first name, email, date, time and phone.");
     }
   })
 </script>

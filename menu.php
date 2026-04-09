@@ -100,7 +100,17 @@ if (isset($_POST['add_to_cart'])) {
   </div>
 <?php } ?>
 
-<section class="ftco-intro">
+<?php
+if (!empty($_SESSION['flash_booking'])) {
+  $fb = $_SESSION['flash_booking'];
+  unset($_SESSION['flash_booking']);
+  ?>
+  <div class="container" style="margin-top:24px;">
+    <div class="alert alert-<?php echo $fb['type'] === 'ok' ? 'success' : 'danger'; ?> mb-0 py-3"><?php echo htmlspecialchars($fb['msg']); ?></div>
+  </div>
+<?php } ?>
+
+<section class="ftco-intro" id="ftco-intro">
   <div class="container-wrap">
     <div class="wrap d-md-flex align-items-xl-end">
       <div class="info">
@@ -108,7 +118,7 @@ if (isset($_POST['add_to_cart'])) {
           <div class="col-md-4 d-flex ftco-animate">
             <div class="icon"><span class="icon-phone"></span></div>
             <div class="text">
-              <h3>000 (123) 456 7890</h3>
+              <h3>+91 98765 43210</h3>
               <p>
                 A small river named Duden flows by their place and supplies.
               </p>
@@ -117,9 +127,9 @@ if (isset($_POST['add_to_cart'])) {
           <div class="col-md-4 d-flex ftco-animate">
             <div class="icon"><span class="icon-my_location"></span></div>
             <div class="text">
-              <h3>198 West 21th Street</h3>
+              <h3>Ahmedabad · Vadodara · Gandhinagar</h3>
               <p>
-                203 Fake St. Mountain View, San Francisco, California, USA
+                Shop 4, CG Road, Navrangpura, Ahmedabad, Gujarat 380009, India — also serving Vadodara &amp; Gandhinagar
               </p>
             </div>
           </div>
@@ -134,13 +144,25 @@ if (isset($_POST['add_to_cart'])) {
       </div>
       <div class="book p-4">
         <h3>Book a Table</h3>
+        <?php if (BOOKING_FEE_INR > 0) { ?>
+          <p class="text-white mb-3" style="opacity:0.9;font-size:14px;">Online holding fee: <strong>₹<?php echo htmlspecialchars(number_format(BOOKING_FEE_INR, 0)); ?></strong> via Razorpay after you submit.</p>
+        <?php } ?>
         <form action="booking/book.php" method="POST" class="appointment-form">
+          <input type="hidden" name="return_to" value="menu" />
           <div class="d-md-flex">
             <div class="form-group">
               <input type="text" id="first_name" name="first_name" class="form-control" placeholder="First Name*" />
             </div>
             <div class="form-group ml-md-4">
               <input type="text" id="last_name" name="last_name" class="form-control" placeholder="Last Name" />
+            </div>
+          </div>
+          <div class="d-md-flex">
+            <div class="form-group">
+              <input type="email" id="booking_email" name="email" class="form-control" placeholder="Email*" />
+            </div>
+            <div class="form-group ml-md-4">
+              <input type="text" id="phone" name="phone" class="form-control" placeholder="Phone*" />
             </div>
           </div>
           <div class="d-md-flex">
@@ -157,9 +179,6 @@ if (isset($_POST['add_to_cart'])) {
                 <div class="icon"><span class="ion-ios-clock"></span></div>
                 <input type="text" id="time" name="time" class="form-control appointment_time" placeholder="Time*" />
               </div>
-            </div>
-            <div class="form-group ml-md-4">
-              <input type="text" id="phone" name="phone" class="form-control" placeholder="Phone*" />
             </div>
           </div>
           <div class="d-md-flex">
@@ -198,7 +217,7 @@ if (isset($_POST['add_to_cart'])) {
               <div class="desc pl-3">
                 <div class="d-flex text align-items-center">
                   <h3><span><?php echo $dessert['name']; ?></span></h3>
-                  <span class="price">$<?php echo $dessert['price']; ?></span>
+                  <span class="price">₹<?php echo htmlspecialchars($dessert['price']); ?></span>
                 </div>
                 <div class="d-block">
                   <p>
@@ -226,7 +245,7 @@ if (isset($_POST['add_to_cart'])) {
               <div class="desc pl-3">
                 <div class="d-flex text align-items-center">
                   <h3><span><?php echo $drink['name']; ?></span></h3>
-                  <span class="price">$<?php echo $drink['price']; ?></span>
+                  <span class="price">₹<?php echo htmlspecialchars($drink['price']); ?></span>
                 </div>
                 <div class="d-block">
                   <p>
@@ -254,7 +273,7 @@ if (isset($_POST['add_to_cart'])) {
               <div class="desc pl-3">
                 <div class="d-flex text align-items-center">
                   <h3><span><?php echo $drink['name']; ?></span></h3>
-                  <span class="price">$<?php echo $drink['price']; ?></span>
+                  <span class="price">₹<?php echo htmlspecialchars($drink['price']); ?></span>
                 </div>
                 <div class="d-block">
                   <p>
@@ -282,7 +301,7 @@ if (isset($_POST['add_to_cart'])) {
               <div class="desc pl-3">
                 <div class="d-flex text align-items-center">
                   <h3><span><?php echo $drink['name']; ?></span></h3>
-                  <span class="price">$<?php echo $drink['price']; ?></span>
+                  <span class="price">₹<?php echo htmlspecialchars($drink['price']); ?></span>
                 </div>
                 <div class="d-block">
                   <p>
@@ -344,7 +363,7 @@ if (isset($_POST['add_to_cart'])) {
                             <p>
                               <?php echo $drink['description']; ?>
                             </p>
-                            <p class="price"><span>$<?php echo $drink['price']; ?></span></p>
+                            <p class="price"><span>₹<?php echo htmlspecialchars($drink['price']); ?></span></p>
                             <p>
                               <?php if (isset($_SESSION['user_id']) || isset($_SESSION['qr_session_token'])) { ?>
                                 <form method="post" action="menu.php" style="display:inline-block;">
@@ -384,7 +403,7 @@ if (isset($_POST['add_to_cart'])) {
                             <p>
                               <?php echo $drink['description']; ?>
                             </p>
-                            <p class="price"><span>$<?php echo $drink['price']; ?></span></p>
+                            <p class="price"><span>₹<?php echo htmlspecialchars($drink['price']); ?></span></p>
                             <p>
                               <?php if (isset($_SESSION['user_id']) || isset($_SESSION['qr_session_token'])) { ?>
                                 <form method="post" action="menu.php" style="display:inline-block;">
@@ -424,7 +443,7 @@ if (isset($_POST['add_to_cart'])) {
                             <p>
                               <?php echo $dessert['description']; ?>
                             </p>
-                            <p class="price"><span>$<?php echo $dessert['price']; ?></span></p>
+                            <p class="price"><span>₹<?php echo htmlspecialchars($dessert['price']); ?></span></p>
                             <p>
                               <?php if (isset($_SESSION['user_id']) || isset($_SESSION['qr_session_token'])) { ?>
                                 <form method="post" action="menu.php" style="display:inline-block;">
@@ -464,7 +483,7 @@ if (isset($_POST['add_to_cart'])) {
                             <p>
                               <?php echo $dessert['description']; ?>
                             </p>
-                            <p class="price"><span>$<?php echo $dessert['price']; ?></span></p>
+                            <p class="price"><span>₹<?php echo htmlspecialchars($dessert['price']); ?></span></p>
                             <p>
                               <?php if (isset($_SESSION['user_id']) || isset($_SESSION['qr_session_token'])) { ?>
                                 <form method="post" action="menu.php" style="display:inline-block;">
@@ -501,12 +520,12 @@ if (isset($_POST['add_to_cart'])) {
   const date = document.querySelector("#date");
   const time = document.querySelector("#time");
   const phone = document.querySelector("#phone");
+  const bookingEmail = document.querySelector("#booking_email");
 
-  // form authentication
   bookTableForm.addEventListener("submit", (e) => {
-    if (firstName.value === "" || date.value === "" || time.value === "" || phone.value === "") {
+    if (firstName.value === "" || date.value === "" || time.value === "" || phone.value === "" || !bookingEmail || bookingEmail.value === "") {
       e.preventDefault();
-      alert("Please fill all the Mandatory details !!");
+      alert("Please fill first name, email, date, time and phone.");
     }
   })
 </script>

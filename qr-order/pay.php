@@ -98,7 +98,7 @@ if (!$razorpayOrderId || $razorpayOrderId === '') {
       key: "<?php echo htmlspecialchars(RAZORPAY_KEY_ID); ?>",
       amount: "<?php echo (int)round(((float)$order['total_price']) * 100); ?>",
       currency: "INR",
-      name: "NS Coffee",
+      name: "Cafe Junction",
       description: "Table Order",
       order_id: "<?php echo htmlspecialchars($razorpayOrderId); ?>",
       handler: function(response) {

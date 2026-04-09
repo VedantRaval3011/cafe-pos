@@ -27,14 +27,13 @@
           </div>
           <div class="col-md-12 mb-3">
             <p>
-              <span>Address:</span> 198 West 21th Street, Suite 721 New York
-              NY 10016
+              <span>Address:</span> Shop 4, CG Road, Navrangpura, Ahmedabad, Gujarat 380009, India (outlets: Vadodara, Gandhinagar)
             </p>
           </div>
           <div class="col-md-12 mb-3">
             <p>
               <span>Phone:</span>
-              <a href="tel://1234567920">+91 1235 2355 98</a>
+              <a href="tel:+919876543210">+91 98765 43210</a>
             </p>
           </div>
           <div class="col-md-12 mb-3">

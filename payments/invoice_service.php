@@ -58,7 +58,7 @@ function generate_and_send_invoice(mysqli $conn, int $order_id): array
 
           $mail->setFrom(SMTP_FROM_EMAIL, SMTP_FROM_NAME);
           $mail->addAddress($order['email'], trim(($order['first_name'] ?? '') . ' ' . ($order['last_name'] ?? '')));
-          $mail->Subject = "Your NS Coffee Invoice " . ($order['invoice_number'] ?? ("#" . $order_id));
+          $mail->Subject = "Your Cafe Junction Invoice " . ($order['invoice_number'] ?? ("#" . $order_id));
           $mail->Body = "Thanks for your order! Your invoice is attached.";
           $mail->addAttachment($absPath, basename($absPath));
 
@@ -120,7 +120,7 @@ function build_invoice_html(array $order, $itemsRes): string
 <body>
   <div class='top'>
     <div>
-      <h1>NS Coffee</h1>
+      <h1>Cafe Junction</h1>
       <div class='muted'>Digital Invoice</div>
     </div>
     <div style='text-align:right;'>

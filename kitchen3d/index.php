@@ -83,7 +83,7 @@ $invoiceUrl = $trackingMode
         if ($trackingMode) echo "Order #{$orderId} — Live Kitchen";
         elseif ($tableNumber) echo "Table {$tableNumber} — Live Kitchen";
         else echo "Live Kitchen";
-    ?> | NS Coffee</title>
+    ?> | Cafe Junction</title>
     <style>
         *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
         body { overflow: hidden; background: #0a0604; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #fff; }
@@ -319,16 +319,20 @@ $invoiceUrl = $trackingMode
         /* ── 3D Confetti (canvas overlay) ── */
         #confetti-canvas { position: fixed; inset: 0; z-index: 200; pointer-events: none; }
 
-        /* ── Instruction Banner ── */
+        /* ── Instruction Banner (top-left: avoids overlapping the 3D CAFE JUNCTION sign in the upper centre) ── */
         #instruction-banner {
-            position: fixed; top: 110px; left: 50%; transform: translateX(-50%);
+            position: fixed;
+            top: 58px;
+            left: 16px;
+            right: auto;
+            transform: none;
             z-index: 120; pointer-events: auto;
             display: flex; align-items: center; gap: 12px;
             padding: 12px 20px; border-radius: 12px;
             background: rgba(196,155,99,0.18); border: 1px solid rgba(232,168,124,0.3);
             backdrop-filter: blur(12px);
             animation: bannerSlide 0.5s ease;
-            max-width: 520px;
+            max-width: min(360px, calc(100vw - 32px));
         }
         #instruction-banner.hidden { display: none; }
         .ib-icon { font-size: 1.4rem; flex-shrink: 0; }
@@ -340,7 +344,7 @@ $invoiceUrl = $trackingMode
             transition: all 0.2s;
         }
         .ib-dismiss:hover { background: rgba(255,255,255,0.15); color: #fff; }
-        @keyframes bannerSlide { from { opacity: 0; transform: translateX(-50%) translateY(-10px); } to { opacity: 1; transform: translateX(-50%) translateY(0); } }
+        @keyframes bannerSlide { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
 
         /* ── Payment Banner (top-right: avoids overlapping order chips + station row) ── */
         #payment-banner {
@@ -883,6 +887,15 @@ $invoiceUrl = $trackingMode
             }
 
             #hint { display: none; }
+
+            /* Hint sits above station row + chips so it never covers the 3D title or stacked header */
+            #instruction-banner {
+                top: auto;
+                left: 8px;
+                right: 8px;
+                bottom: calc(148px + env(safe-area-inset-bottom));
+                max-width: none;
+            }
         }
 
         /* Short screens: keep payment above cart/chips without hitting the header */
@@ -896,6 +909,177 @@ $invoiceUrl = $trackingMode
             #order-track { top: 122px; }
             #status-msg { top: 194px; }
             .ctrl-btn { font-size: 0.54rem; padding: 7px 2px; min-height: 34px; }
+        }
+
+        /* ════════════════════════════════════════════════════
+           MINI-GAME OVERLAY
+           ════════════════════════════════════════════════════ */
+        #minigame-overlay {
+            position: fixed; inset: 0; z-index: 600;
+            background: rgba(0,0,0,0.82); backdrop-filter: blur(10px);
+            display: none; align-items: center; justify-content: center;
+            padding: 16px;
+        }
+        #minigame-box {
+            background: rgba(18,12,6,0.98); border: 1px solid rgba(232,168,124,0.28);
+            border-radius: 18px; overflow: hidden;
+            box-shadow: 0 24px 70px rgba(0,0,0,0.75), 0 0 0 1px rgba(255,255,255,0.04) inset;
+            display: flex; flex-direction: column;
+            width: min(640px, 96vw);
+            height: min(620px, 92vh);
+            animation: mgSlide 0.3s cubic-bezier(0.34,1.3,0.64,1);
+        }
+        @keyframes mgSlide {
+            from { transform: scale(0.88) translateY(20px); opacity: 0; }
+            to   { transform: scale(1)    translateY(0);    opacity: 1; }
+        }
+        #minigame-header {
+            display: flex; align-items: center; gap: 10px;
+            padding: 13px 18px; border-bottom: 1px solid rgba(232,168,124,0.1);
+            background: rgba(196,155,99,0.07);
+        }
+        #mg-npc-icon { font-size: 1.5rem; line-height: 1; }
+        #mg-title { flex: 1; font-size: 0.95rem; font-weight: 800; color: #e8a87c; letter-spacing: 0.02em; }
+        #mg-close {
+            width: 30px; height: 30px; border-radius: 50%; border: none; cursor: pointer;
+            background: rgba(255,255,255,0.07); color: #888; font-size: 1.2rem;
+            display: flex; align-items: center; justify-content: center; transition: all 0.2s;
+        }
+        #mg-close:hover { background: rgba(255,100,100,0.2); color: #ff8888; }
+        #mg-canvas {
+            display: block;
+            width: 100%;
+            flex: 1;
+            min-height: 0;
+            background: #1a0e05;
+        }
+        #mg-iframe {
+            display: none; border: none;
+            width: 100%;
+            flex: 1;          /* fills all remaining height inside #minigame-box */
+            min-height: 0;    /* required for flex children to shrink/grow correctly */
+            background: #1a0a00;
+        }
+        #minigame-footer {
+            display: flex; align-items: center; gap: 10px;
+            padding: 11px 18px; border-top: 1px solid rgba(232,168,124,0.1);
+            background: rgba(0,0,0,0.25);
+        }
+        #mg-score { font-size: 1rem; font-weight: 800; color: #c49b63; flex: 1; }
+        #mg-timer {
+            font-size: 0.82rem; font-weight: 700; color: #aaa;
+            min-width: 34px; text-align: center;
+            background: rgba(255,255,255,0.06); border-radius: 6px; padding: 3px 7px;
+        }
+        #mg-replay {
+            padding: 7px 18px; border-radius: 8px; border: none; cursor: pointer;
+            background: linear-gradient(135deg, #c49b63, #e8a87c); color: #111;
+            font-size: 0.8rem; font-weight: 800; letter-spacing: 0.02em; transition: all 0.2s;
+        }
+        #mg-replay:hover { opacity: 0.85; transform: translateY(-1px); }
+        @media (max-width: 480px) {
+            #mg-canvas { min-height: 220px; }
+        }
+
+        /* ════════════════════════════════════════════════════
+           INTERACTION PROGRESS BAR (click feedback)
+           ════════════════════════════════════════════════════ */
+        #interaction-progress {
+            position: fixed; top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 180;
+            display: none; flex-direction: column; align-items: center; gap: 9px;
+            padding: 13px 22px; border-radius: 14px;
+            background: rgba(10,6,4,0.9); border: 1px solid rgba(232,168,124,0.35);
+            backdrop-filter: blur(12px);
+            box-shadow: 0 8px 30px rgba(0,0,0,0.5), 0 0 20px rgba(196,155,99,0.1);
+            pointer-events: none; min-width: 190px;
+        }
+        .ip-label { font-size: 0.88rem; font-weight: 800; color: #e8a87c; letter-spacing: 0.03em; }
+        .ip-bar {
+            width: 160px; height: 7px;
+            background: rgba(255,255,255,0.08); border-radius: 4px; overflow: hidden;
+        }
+        .ip-fill {
+            height: 100%; width: 0%;
+            background: linear-gradient(90deg, #c49b63, #ffcc80, #e8a87c);
+            border-radius: 4px; transition: width 0.08s linear;
+            box-shadow: 0 0 8px rgba(232,168,124,0.6);
+        }
+
+        /* ════════════════════════════════════════════════════
+           NPC SPEECH BUBBLES (HTML overlay, tracks 3D pos)
+           ════════════════════════════════════════════════════ */
+        .npc-bubble {
+            position: fixed;
+            pointer-events: none;
+            z-index: 210;
+            transform: translate(-50%, -100%) translateY(-14px);
+            background: rgba(255,248,220,0.97);
+            border: 2px solid rgba(196,155,80,0.75);
+            border-radius: 12px;
+            padding: 8px 13px 9px;
+            min-width: 130px; max-width: 200px;
+            text-align: center;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.45), 0 0 0 1px rgba(255,255,255,0.3) inset;
+            font-family: 'Segoe UI', sans-serif;
+            line-height: 1.35;
+        }
+        /* Tail pointing down toward character */
+        .npc-bubble::after {
+            content: '';
+            position: absolute;
+            bottom: -10px; left: 50%;
+            transform: translateX(-50%);
+            border: 9px solid transparent;
+            border-top-color: rgba(255,248,220,0.97);
+            border-bottom: 0;
+        }
+        .npc-bubble::before {
+            content: '';
+            position: absolute;
+            bottom: -13px; left: 50%;
+            transform: translateX(-50%);
+            border: 10px solid transparent;
+            border-top-color: rgba(196,155,80,0.75);
+            border-bottom: 0;
+            z-index: -1;
+        }
+        .npc-bub-header {
+            font-size: 0.72rem; font-weight: 800;
+            color: #c49b63; letter-spacing: 0.04em;
+            text-transform: uppercase; margin-bottom: 4px;
+        }
+        .npc-bub-text {
+            font-size: 0.78rem; font-weight: 600;
+            color: #2a1a08; margin-bottom: 3px;
+        }
+        .npc-bub-cta {
+            font-size: 0.72rem; font-weight: 700;
+            color: #b8860b;
+            background: rgba(196,155,80,0.15);
+            border-radius: 6px; padding: 2px 6px;
+            display: inline-block; margin-top: 2px;
+        }
+
+        /* ════════════════════════════════════════════════════
+           KITCHEN SHOUT BUBBLES (random events)
+           ════════════════════════════════════════════════════ */
+        .kitchen-shout {
+            position: fixed; z-index: 450; pointer-events: none;
+            padding: 6px 14px; border-radius: 20px;
+            background: rgba(255,230,120,0.96); color: #1a1208;
+            font-size: 0.78rem; font-weight: 900; letter-spacing: 0.02em;
+            border: 2px solid rgba(196,155,80,0.8);
+            box-shadow: 0 4px 16px rgba(0,0,0,0.55), 0 0 12px rgba(255,220,80,0.3);
+            white-space: nowrap;
+        }
+        .kitchen-shout::after {
+            content: '';
+            position: absolute; bottom: -8px; left: 50%; transform: translateX(-50%);
+            border: 8px solid transparent;
+            border-top-color: rgba(255,230,120,0.96);
+            border-bottom: 0; filter: drop-shadow(0 2px 3px rgba(0,0,0,0.3));
         }
     </style>
 </head>
@@ -1107,6 +1291,30 @@ $invoiceUrl = $trackingMode
 
     <!-- Razorpay SDK -->
     <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+
+    <!-- Mini-Game Overlay -->
+    <div id="minigame-overlay" style="display:none;" role="dialog" aria-modal="true">
+        <div id="minigame-box">
+            <div id="minigame-header">
+                <span id="mg-npc-icon">🎮</span>
+                <span id="mg-title">Mini Game</span>
+                <button id="mg-close" aria-label="Close game">×</button>
+            </div>
+            <canvas id="mg-canvas" width="420" height="300"></canvas>
+            <iframe id="mg-iframe" title="Mini Game" allowfullscreen></iframe>
+            <div id="minigame-footer">
+                <span id="mg-score">Score: 0</span>
+                <span id="mg-timer">20s</span>
+                <button id="mg-replay">▶ Play Again</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Click Interaction Progress Bar -->
+    <div id="interaction-progress" style="display:none;" aria-hidden="true">
+        <span class="ip-label">Brewing...</span>
+        <div class="ip-bar"><div class="ip-fill"></div></div>
+    </div>
 
     <!-- Three.js -->
     <script type="importmap">

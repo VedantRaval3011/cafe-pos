@@ -47,9 +47,16 @@ CREATE TABLE `bookings` (
   `last_name` varchar(100) NOT NULL,
   `date` varchar(11) NOT NULL,
   `time` varchar(10) NOT NULL,
-  `phone` varchar(10) NOT NULL,
+  `phone` varchar(20) NOT NULL,
+  `email` varchar(120) NOT NULL DEFAULT '',
   `message` text NOT NULL,
-  `status` varchar(50) NOT NULL DEFAULT 'pending',
+  `amount` decimal(10,2) NOT NULL DEFAULT 0.00,
+  `payment_status` varchar(20) NOT NULL DEFAULT 'unpaid',
+  `razorpay_order_id` varchar(100) DEFAULT NULL,
+  `razorpay_payment_id` varchar(100) DEFAULT NULL,
+  `razorpay_signature` varchar(255) DEFAULT NULL,
+  `paid_at` datetime DEFAULT NULL,
+  `status` varchar(50) NOT NULL DEFAULT 'awaiting_payment',
   `user_id` int(3) NOT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
@@ -116,21 +123,21 @@ CREATE TABLE `products` (
 --
 
 INSERT INTO `products` (`id`, `name`, `image`, `description`, `price`, `type`, `created_at`) VALUES
-(1, 'Coffee Capuccino', 'menu-1.jpg', 'Far far away, behind the word mountains, far from the countries Vokalia and Consonantia.', '4.90', 'coffee', '2024-02-28 06:19:36'),
-(2, 'Creamy Latte Coffee', 'menu-2.jpg', 'Far far away, behind the word mountains, far from the countries Vokalia and Consonantia.', '5.10', 'coffee', '2024-02-28 06:19:36'),
-(3, 'Cold Coffee', 'menu-3.jpg', 'Far far away, behind the word mountains, far from the countries Vokalia and Consonantia.', '3.65', 'coffee', '2024-02-28 07:13:50'),
-(4, 'Lemonde Juice', 'drink-1.jpg', 'Far far away, behind the word mountains, far from the countries Vokalia and Consonantia.', '2.90', 'drink', '2024-04-24 16:53:22'),
-(5, 'Pineapple Juice', 'drink-2.jpg', 'Far far away, behind the word mountains, far from the countries Vokalia and Consonantia.', '3.50', 'drink', '2024-04-24 16:53:22'),
-(6, 'Hot Cake Honey', 'dessert-1.jpg', 'Far far away, behind the word mountains, far from the countries Vokalia and Consonantia.', '3.85', 'dessert', '2024-04-24 16:59:23'),
-(7, 'Cherry Butter Cake', 'dessert-2.jpg', 'Far far away, behind the word mountains, far from the countries Vokalia and Consonantia.', '4.00', 'dessert', '2024-04-24 16:59:23'),
-(8, 'Banana Cheery Cake', 'dessert-5.jpg', 'A small river named Duden flows by their place and supplies', '4.00', 'dessert', '2024-04-24 17:01:31'),
-(14, 'Soda Drinks', 'drink-3.jpg', 'Far far away, behind the word mountains, far from the countries Vokalia and Consonantia.', '5.90', 'drink', '2024-05-28 07:40:44'),
-(15, 'Roasted Chicken', 'dish-4.jpg', 'Far far away, behind the word mountains, far from the countries Vokalia and Consonantia.', '10', 'main dish', '2024-05-28 07:43:52'),
-(16, 'Cornish - Mackere', 'dish-1.jpg', 'Far far away, behind the word mountains, far from the countries Vokalia and Consonantia.', '12', 'main dish', '2024-05-28 07:56:21'),
-(17, ' Roasted Steak', 'dish-2.jpg', 'Far far away, behind the word mountains, far from the countries Vokalia and Consonantia.', '12', 'main dish', '2024-05-28 07:59:00'),
-(18, 'Cheese Burger', 'burger-1.jpg', 'Far far away, behind the word mountains, far from the countries Vokalia and Consonantia.', '5', 'starter', '2024-05-28 08:01:57'),
-(19, 'Salad Burger', 'burger-3.jpg', 'Far far away, behind the word mountains, far from the countries Vokalia and Consonantia.', '6.80', 'starter', '2024-05-28 08:02:50'),
-(20, 'Roasted Sea Food', 'dish-5.jpg', 'Far far away, behind the word mountains, far from the countries Vokalia and Consonantia.', '18', 'main dish', '2024-05-28 08:04:41');
+(1, 'Coffee Capuccino', 'menu-1.jpg', 'Far far away, behind the word mountains, far from the countries Vokalia and Consonantia.', '189', 'coffee', '2024-02-28 06:19:36'),
+(2, 'Creamy Latte Coffee', 'menu-2.jpg', 'Far far away, behind the word mountains, far from the countries Vokalia and Consonantia.', '199', 'coffee', '2024-02-28 06:19:36'),
+(3, 'Cold Coffee', 'menu-3.jpg', 'Far far away, behind the word mountains, far from the countries Vokalia and Consonantia.', '149', 'coffee', '2024-02-28 07:13:50'),
+(4, 'Lemonde Juice', 'drink-1.jpg', 'Far far away, behind the word mountains, far from the countries Vokalia and Consonantia.', '89', 'drink', '2024-04-24 16:53:22'),
+(5, 'Pineapple Juice', 'drink-2.jpg', 'Far far away, behind the word mountains, far from the countries Vokalia and Consonantia.', '109', 'drink', '2024-04-24 16:53:22'),
+(6, 'Hot Cake Honey', 'dessert-1.jpg', 'Far far away, behind the word mountains, far from the countries Vokalia and Consonantia.', '139', 'dessert', '2024-04-24 16:59:23'),
+(7, 'Cherry Butter Cake', 'dessert-2.jpg', 'Far far away, behind the word mountains, far from the countries Vokalia and Consonantia.', '149', 'dessert', '2024-04-24 16:59:23'),
+(8, 'Banana Cheery Cake', 'dessert-5.jpg', 'A small river named Duden flows by their place and supplies', '149', 'dessert', '2024-04-24 17:01:31'),
+(14, 'Soda Drinks', 'drink-3.jpg', 'Far far away, behind the word mountains, far from the countries Vokalia and Consonantia.', '179', 'drink', '2024-05-28 07:40:44'),
+(15, 'Roasted Chicken', 'dish-4.jpg', 'Far far away, behind the word mountains, far from the countries Vokalia and Consonantia.', '449', 'main dish', '2024-05-28 07:43:52'),
+(16, 'Cornish - Mackere', 'dish-1.jpg', 'Far far away, behind the word mountains, far from the countries Vokalia and Consonantia.', '529', 'main dish', '2024-05-28 07:56:21'),
+(17, ' Roasted Steak', 'dish-2.jpg', 'Far far away, behind the word mountains, far from the countries Vokalia and Consonantia.', '549', 'main dish', '2024-05-28 07:59:00'),
+(18, 'Cheese Burger', 'burger-1.jpg', 'Far far away, behind the word mountains, far from the countries Vokalia and Consonantia.', '259', 'starter', '2024-05-28 08:01:57'),
+(19, 'Salad Burger', 'burger-3.jpg', 'Far far away, behind the word mountains, far from the countries Vokalia and Consonantia.', '329', 'starter', '2024-05-28 08:02:50'),
+(20, 'Roasted Sea Food', 'dish-5.jpg', 'Far far away, behind the word mountains, far from the countries Vokalia and Consonantia.', '699', 'main dish', '2024-05-28 08:04:41');
 
 -- --------------------------------------------------------
 

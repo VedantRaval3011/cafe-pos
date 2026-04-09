@@ -86,7 +86,7 @@ if (isset($_POST['submit'])) {
               <input type="text" name="name" class="form-control" value="<?php echo htmlspecialchars($product['name']); ?>" />
             </div>
             <div class="form-outline mb-3">
-              <label class="form-label">Price</label>
+              <label class="form-label">Price (₹)</label>
               <input type="text" name="price" class="form-control" value="<?php echo htmlspecialchars($product['price']); ?>" />
             </div>
             <div class="form-group mb-3">

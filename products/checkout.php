@@ -106,20 +106,22 @@ if (isset($_POST['submit'])) {
             <div class="w-100"></div>
             <div class="col-md-12">
               <div class="form-group">
-                <label for="country">State / Country *</label>
+                <label for="country">State *</label>
                 <div class="select-wrap">
                   <div class="icon">
                     <span class="ion-ios-arrow-down"></span>
                   </div>
                   <select name="country" id="country" class="form-control">
-                    <option value="" selected hidden>Select State/Country</option>
-                    <option value="France">France</option>
-                    <option value="Italy">Italy</option>
-                    <option value="India">India</option>
-                    <option value="Philippines">Philippines</option>
-                    <option value="South Korea">South Korea</option>
-                    <option value="Hongkong">Hongkong</option>
-                    <option value="Japan">Japan</option>
+                    <option value="" selected hidden>Select state</option>
+                    <option value="Gujarat">Gujarat</option>
+                    <option value="Maharashtra">Maharashtra</option>
+                    <option value="Rajasthan">Rajasthan</option>
+                    <option value="Delhi">Delhi</option>
+                    <option value="Karnataka">Karnataka</option>
+                    <option value="Tamil Nadu">Tamil Nadu</option>
+                    <option value="Telangana">Telangana</option>
+                    <option value="West Bengal">West Bengal</option>
+                    <option value="Other India">Other India</option>
                   </select>
                 </div>
               </div>
@@ -135,7 +137,7 @@ if (isset($_POST['submit'])) {
             <div class="col-md-6">
               <div class="form-group">
                 <label for="town-or-city">Town / City *</label>
-                <input type="text" id="town-or-city" name="town-or-city" class="form-control" placeholder="" />
+                <input type="text" id="town-or-city" name="town-or-city" class="form-control" placeholder="Ahmedabad, Vadodara, or Gandhinagar" />
               </div>
             </div>
             <div class="col-md-6">

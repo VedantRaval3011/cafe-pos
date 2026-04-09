@@ -72,7 +72,7 @@ if (isset($_POST['submit'])) {
               <input type="text" name="name" class="form-control" placeholder="name" />
             </div>
             <div class="form-outline mb-4 mt-4">
-              <input type="text" name="price" class="form-control" placeholder="price" />
+              <input type="text" name="price" class="form-control" placeholder="Price in ₹ (e.g. 199)" />
             </div>
             <div class="form-outline mb-4 mt-4">
               <input type="file" name="image" class="form-control" />

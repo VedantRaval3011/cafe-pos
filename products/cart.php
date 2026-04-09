@@ -88,7 +88,7 @@ if (isset($_POST['checkout'])) {
                       </p>
                     </td>
 
-                    <td class="price">$<?php echo $row['price']; ?></td>
+                    <td class="price">₹<?php echo htmlspecialchars($row['price']); ?></td>
 
                     <td>
                       <div class="input-group mb-3">
@@ -96,7 +96,7 @@ if (isset($_POST['checkout'])) {
                       </div>
                     </td>
 
-                    <td class="total">$<?php echo $row['price'] * $row['quantity']; ?></td>
+                    <td class="total">₹<?php echo number_format((float)$row['price'] * (int)$row['quantity'], 2); ?></td>
                   </tr>
                 <?php }
               } else { ?>
@@ -119,46 +119,41 @@ if (isset($_POST['checkout'])) {
           <h3>Cart Totals</h3>
           <p class="d-flex">
             <span>Subtotal</span>
-            <span>$<?php
+            <span>₹<?php
                     if ($total['total'] > 0) {
-                      # code...
-                      echo number_format($total['total'], 2, '.', "");
+                      echo number_format((float)$total['total'], 2, '.', "");
                     } else echo "0.00";
                     ?>
             </span>
           </p>
           <p class="d-flex">
             <span>Delivery</span>
-            <span>$<?php
+            <span>₹<?php
                     if ($total['total'] > 0) {
-                      # code...
-                      echo "5.00";
+                      echo "49.00";
                     } else echo "0.00";
                     ?></span>
           </p>
           <p class="d-flex">
             <span>Discount</span>
-            <span>$<?php
+            <span>₹<?php
                     if ($total['total'] > 0) {
-                      # code...
-                      echo "3.00";
+                      echo "29.00";
                     } else echo "0.00";
                     ?></span>
           </p>
           <hr />
           <p class="d-flex total-price">
             <span>Total</span>
-            <span>$<?php
+            <span>₹<?php
                     if ($total['total'] > 0) {
-                      # code...
-
-                      echo number_format($total['total'] + 5 - 3, 2, '.', "");
+                      echo number_format((float)$total['total'] + 49 - 29, 2, '.', "");
                     } else echo "0.00";
                     ?></span>
           </p>
         </div>
         <form action="cart.php" method="post">
-          <input hidden name="total-price" type="text" value="<?php echo $total['total'] + 5 - 3; ?>">
+          <input hidden name="total-price" type="text" value="<?php echo (float)$total['total'] + 49 - 29; ?>">
           <?php if ($total['total'] > 0) { ?>
             <button class="btn btn-primary py-3 px-4" name="checkout" type="submit">Proceed to Checkout</button>
           <?php } ?>
