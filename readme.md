@@ -62,6 +62,7 @@ Configuration is loaded from **`.env`** in the **project root** (same folder as 
 |----------|-------------|
 | `RAZORPAY_KEY_ID` | Key ID from Razorpay Dashboard (test or live) |
 | `RAZORPAY_KEY_SECRET` | Secret key — never expose in frontend |
+| `BOOKING_FEE_INR` | Table booking holding fee in INR (default `200`; use `0` only for local testing without charging) |
 
 Use test keys while developing. Webhooks/callback URLs must match your `APP_URL` in production.
 
@@ -92,33 +93,79 @@ Used only if your project uses the bootstrap admin flow.
 
 ## How to start (local)
 
-### 1. Clone or copy the project
+### After you `git clone` — full checklist
 
-Place the project under your web root, e.g.:
+Follow these steps in order the first time you run the app on your machine.
 
-`C:\xampp\htdocs\coffee`
+#### 1. Clone the repository
 
-### 2. Create `.env`
+```bash
+git clone https://github.com/mrnikhilsingh/coffee-shop-management-system.git
+```
 
-Copy `.env.example` → `.env` and fill **App URLs**, **database**, and **Razorpay** keys (see above).
+Pick a folder name that matches how you will open the site in the browser, or plan to set `APP_URL` / `ADMIN_URL` in `.env` to match whatever path you use.
 
-### 3. Create the database
+**XAMPP (Windows) — typical layout**
 
-1. Start **Apache** and **MySQL** in XAMPP (or your stack).
-2. Open **phpMyAdmin**: `http://localhost/phpmyadmin`
-3. Create a database named **`ns_coffee`** (utf8mb4).
-4. Import **`db/ns_coffee.sql`** (Import tab → choose file → Go).
+- Move or clone into your Apache document root, for example: `C:\xampp\htdocs\coffee`
+- Then your public URL is `http://localhost/coffee` (folder name = last segment of the URL)
 
-### 4. **Apply migrations** (QR ordering + per-line order status)
+**macOS (MAMP) / Linux**
 
-Run these SQL files **in order** on the `ns_coffee` database (SQL tab or Import):
+- Clone into your web root (e.g. `htdocs`, `www`, or a vhost directory) so Apache can serve the project folder.
 
-1. `db/migrations/2026-03-18_qr_ordering.sql`
-2. `db/migrations/2026-03-21_order_item_status.sql`
+#### 2. Start the web stack
 
-If a migration says a column already exists, skip that file or adjust manually.
+- Start **Apache** and **MySQL** (XAMPP Control Panel, MAMP, or your distro’s services).
+- Ensure **PHP 8.0+** is the version Apache uses (`php -v` in a terminal).
 
-### 5. Install PHP dependencies (optional)
+#### 3. Create `.env` from the example
+
+From the **project root** (the folder that contains `config/`, `db/`, and `composer.json`):
+
+```bash
+cp .env.example .env
+```
+
+Windows PowerShell:
+
+```powershell
+copy .env.example .env
+```
+
+Edit `.env` and set at least:
+
+- `APP_URL` and `ADMIN_URL` — must match the URL you type in the browser (no trailing slash).
+- `DB_HOST`, `DB_USER`, `DB_PASS`, `DB_NAME` — usually `localhost`, `root`, empty password, `ns_coffee` on default XAMPP.
+- `RAZORPAY_KEY_ID` and `RAZORPAY_KEY_SECRET` — use [Razorpay](https://razorpay.com/) test keys for development.
+
+Optional but useful:
+
+- `BOOKING_FEE_INR` — table booking holding fee in INR; use `0` only for local testing without taking a payment.
+- SMTP variables — if you want invoice emails; see the env table below.
+
+> **Production:** the app requires a `.env` on the server. On **localhost**, if `.env` is missing, `config/config.php` falls back to defaults (still create `.env` for Razorpay and consistent URLs).
+
+#### 4. Create the database and import the schema
+
+1. Open **phpMyAdmin** (e.g. `http://localhost/phpmyadmin`) or use the MySQL client.
+2. Create a database named **`ns_coffee`**, collation **utf8mb4** (utf8mb4_unicode_ci is fine).
+3. Select that database → **Import** → choose **`db/ns_coffee.sql`** → run.
+
+#### 5. Apply migrations (run in this order)
+
+Run each file **once** against the `ns_coffee` database (phpMyAdmin **Import** or **SQL** tab), in this order:
+
+| Order | File | Purpose |
+|------:|------|---------|
+| 1 | `db/migrations/2026-03-18_qr_ordering.sql` | QR table ordering |
+| 2 | `db/migrations/2026-03-21_order_item_status.sql` | Per-line order item status |
+| 3 | `db/migrations/2026-04-08_booking_razorpay.sql` | Bookings: Razorpay + email-related columns |
+| 4 | `db/migrations/2026-04-08_inr_prices.sql` | Sample product prices in INR |
+
+If MySQL reports that a column already exists, that migration may have been applied already; fix or skip as needed. The booking migration uses `ADD COLUMN IF NOT EXISTS` (MySQL 8.0.12+ / recent MariaDB).
+
+#### 6. Install Composer dependencies (recommended)
 
 From the project root:
 
@@ -126,20 +173,26 @@ From the project root:
 composer install
 ```
 
-Needed for PDF invoices and email. If you skip this, core ordering may still work without emailed invoices.
+This installs **DomPDF** and **PHPMailer** for PDF invoices and email. The storefront and admin may run without it, but invoice features expect these packages.
 
-### 6. Open the site
+#### 7. Apache and `.htaccess`
 
-With default XAMPP paths and `APP_URL=http://localhost/coffee`:
+If URLs look wrong or routes fail, enable **`mod_rewrite`** and ensure **`AllowOverride`** permits `.htaccess` in this directory (common XAMPP default for `htdocs`).
+
+#### 8. Open the app in the browser
+
+With the project at `http://localhost/coffee` and matching `.env`:
 
 | Page | URL |
 |------|-----|
 | **Home / menu** | `http://localhost/coffee` |
 | **Admin panel** | `http://localhost/coffee/admin-panel` |
-| **QR table entry** | `http://localhost/coffee/qr.php?table=1` (replace `1` with table number) |
-| **3D live kitchen** | `http://localhost/coffee/kitchen3d/` or `.../kitchen3d/?table=1` (table-scoped) |
+| **QR table entry** | `http://localhost/coffee/qr.php?table=1` (change `1` to the table number) |
+| **3D live kitchen** | `http://localhost/coffee/kitchen3d/` or `.../kitchen3d/?table=1` |
 
-### 7. Troubleshooting
+Register a user on the site for customer flows, or use admin credentials if your database / bootstrap flow provides them.
+
+### Troubleshooting
 
 - **“Connection failed” / DB error** — Check MySQL is running, `DB_*` in `.env`, and database exists.
 - **“.env missing” on production** — Upload `.env` next to `config/` (project root). Localhost can fall back to defaults in `config/config.php` if `.env` is absent.
